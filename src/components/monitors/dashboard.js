@@ -1,40 +1,47 @@
 import React from "react";
-import { Redirect } from "react-router-dom";
+import { Layout, Menu, Button, Modal, Slider, Form, Input } from "antd";
+import {
+  NodeExpandOutlined,
+  LineChartOutlined,
+  ImportOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
+import "./monitor.css";
 import request from "../../utils/request";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import InputGroup from "react-bootstrap/InputGroup";
-import FormControl from "react-bootstrap/FormControl";
-import Form from "react-bootstrap/Form";
-import Monitor from "./monitor";
+import Monitor from "./new_monitor";
+import MonitorForm from './form'
+import {
+    HashRouter as Router,
+    Switch,
+    Link,
+    Route,
+    Redirect,
+  } from "react-router-dom";
 
 
-export default function DashBoard({ws, logout}) {
+
+const { Header, Sider, Content } = Layout;
+
+export default function DashBoard({ ws, logout }) {
   const [Monitors, SetMonitors] = React.useState({});
   const [show, setShow] = React.useState(false);
-  const [MonitorType, setMonitorType] = React.useState(null);
-  const [interval, setInterval] = React.useState(5);
-  const [url, setUrl] = React.useState("");
-  const [name, setName] = React.useState("");
 
-  const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
   function GetMonirots() {
     request({ method: "get", url: "api/monitor/" }, (res) => {
-      let data = {}
-      res.data.forEach((monitor)=>data[monitor.id]=monitor)
+      let data = {};
+      res.data.forEach((monitor) => (data[monitor.id] = monitor));
       SetMonitors(data);
     });
   }
 
-  function handleSave() {
-    let data = { monitor_type: MonitorType, 'interval': interval*60, name, url };
+  function DeleteMonitor(monitor_id) {
     request(
-      { method: "post", url: "api/monitor/", data },
+      { url: "api/monitor/" + monitor_id + "/", method: "delete" },
       (res) => {
-        let monitor = res.data
-        SetMonitors({...Monitors, [monitor.id]: monitor})
+        delete Monitors[monitor_id];
+        SetMonitors({ ...Monitors });
       },
       (err) => {
         console.log(err);
@@ -42,123 +49,75 @@ export default function DashBoard({ws, logout}) {
     );
   }
 
-  function GetChangesFromWS(data){
-    console.log(data['data'])
-    let log = data['data']
-    SetMonitors({...Monitors, [log.monitor.id]: log.monitor})
+  function GetChangesFromWS(data) {
+    console.log('WS', data["data"]);
+    let log = data["data"];
+    SetMonitors({ ...Monitors, [log.monitor.id]: log.monitor });
   }
 
-
-  React.useEffect(()=>{ws.dispatch.refresh_monitors = GetChangesFromWS})
+  React.useEffect(() => {
+    ws.dispatch.refresh_monitors = GetChangesFromWS;
+  });
   React.useEffect(GetMonirots, []);
+
   return (
-    <div>
-      <Modal show={show} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Modal heading</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <select
-            onChange={(e) => {
-              setMonitorType(e.target.value);
-            }}
-            class="form-select"
-            aria-label="Default select example"
+    <Layout style={{ height: "100%" }}>
+      
+      <MonitorForm show={show} setShow={setShow} SetMonitors={SetMonitors} Monitors={Monitors} />
+
+      <Sider trigger={null} breakpoint="lg" collapsedWidth="0">
+        <Menu
+          style={{ marginTop: "50%" }}
+          theme="dark"
+          mode="inline"
+          defaultSelectedKeys={["1"]}
+        >
+          <Menu.Item
+            style={{ fontSize: "2em" }}
+            key="1"
+            icon={<LineChartOutlined style={{ fontSize: "0.8em" }} />}
           >
-            <option selected>Type</option>
-            <option value="0">Http</option>
-          </select>
+            <Link to="/dashbroad">Monitors</Link>
+          </Menu.Item>
+          <Menu.Item
+            key="2"
+            style={{ fontSize: "2em", marginTop: "20%" }}
+            icon={<NodeExpandOutlined style={{ fontSize: "0.8em" }} />}
+          >
+            <Link to="/dashbroad/settings">Settings</Link>
+          </Menu.Item>
+          <Menu.Item
+            key="3"
+            style={{ fontSize: "2em", marginTop: "20%" }}
+            icon={<ImportOutlined style={{ fontSize: "0.8em" }} />}
+          >
+            Logout
+          </Menu.Item>
+        </Menu>
+      </Sider>
+      <Layout className="site-layout">
+        <Content
+          className="site-layout-background"
+          style={{
+            margin: "24px 16px",
+            padding: 24,
+            minHeight: 280,
+          }}
+        >
+        <Switch>
+            <Route exact path='/dashboard'>
+            <h3>Please select a topic.</h3>
+            </Route>
+            <Route path='/dashboard}/:monitorId'>
+            <Topic />
+            </Route>
+            <Route path='/dashboard}/settings'>
+            <Topic />
+            </Route>
+      </Switch>
 
-          {MonitorType == 0 ? (
-            <div>
-              <InputGroup className="mb-3">
-                <InputGroup.Prepend>
-                  <InputGroup.Text id="inputGroup-sizing-default">
-                    Url
-                  </InputGroup.Text>
-                </InputGroup.Prepend>
-                <FormControl
-                  onChange={(e) => {
-                    setUrl(e.target.value);
-                  }}
-                  aria-label="Default"
-                  aria-describedby="inputGroup-sizing-default"
-                />
-              </InputGroup>
-
-              <InputGroup className="mb-3">
-                <InputGroup.Prepend>
-                  <InputGroup.Text id="inputGroup-sizing-default">
-                    Name
-                  </InputGroup.Text>
-                </InputGroup.Prepend>
-                <FormControl
-                  onChange={(e) => {
-                    setName(e.target.value);
-                  }}
-                  aria-label="Default"
-                  aria-describedby="inputGroup-sizing-default"
-                />
-              </InputGroup>
-              <Form.Group controlId="formBasicRange">
-                <Form.Label>Interval</Form.Label>
-                <Form.Control
-                  type="range"
-                  min="5"
-                  max="60"
-                  step="1"
-                  value={interval}
-                  onChange={(e) => {
-                    setInterval(e.target.value);
-                  }}
-                /> <b>{interval}</b>
-              </Form.Group>
-            </div>
-          ) : (
-            ""
-          )}
-          {MonitorType == 1 ? <h1>Hi2</h1> : ""}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-3 p-3 text-white bg-dark" style={{ width: "280px" }}>
-            <svg class="bi me-2" width="40" height="32"></svg>
-            <Button variant="primary" onClick={handleShow}>
-              Add new monitor +
-            </Button>
-            <hr />
-            <ul class="nav nav-pills flex-column mb-auto">
-              <li class="nav-item">
-                <a href="#" class="nav-link active">
-                  <svg class="bi me-2" width="16" height="16"></svg>
-                  Dashboard
-                </a>
-              </li>
-              <li>
-                <a href="#" class="nav-link text-white">
-                  <svg class="bi me-2" width="16" height="16"></svg>
-                  Settings
-                </a>
-              </li>
-            </ul>
-            <hr />
-          </div>
-
-          <div class="col-sm">
-            {Object.entries(Monitors).map(([key, value])=><Monitor key={key} monitor={value} />)}
-          </div>
-        </div>
-      </div>
-    </div>
+        </Content>
+      </Layout>
+    </Layout>
   );
 }

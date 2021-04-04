@@ -1,21 +1,24 @@
 import React from "react";
-import { Redirect } from "react-router-dom";
+import { Redirect, Link } from "react-router-dom";
 import { InputHook } from "../../utils/hooks";
 import request from "../../utils/request";
+import { Form, Input, Button, Checkbox, Row, Col, Card, Alert } from "antd";
+import { UserOutlined, LockOutlined } from "@ant-design/icons";
+import "./login.css";
 
 export default function LoginForm({ auth, login }) {
-  let email_input = InputHook("");
-  let pass_input = InputHook("");
   let [error, setError] = React.useState("");
 
-  function DoLogin(event) {
-    event.preventDefault();
+  function DoLogin(value) {
     setError("");
+    console.log(value);
+    let { password, email } = value;
+    console.log(password, email);
     request(
       {
         method: "post",
         url: "api/auth/sign-in/",
-        data: { email: email_input.value, password: pass_input.value },
+        data: { email: email, password: password },
       },
       (res) => {
         localStorage.setItem("token", res.data.token);
@@ -27,52 +30,69 @@ export default function LoginForm({ auth, login }) {
     );
   }
 
+  if (auth === true){
+    return <Redirect to="/dashboard" />
+  }
+
   return (
-    <div>
-      {auth === true ? (
-        <Redirect to="/dashboard" />
-      ) : (
-        <div>
-          <form onSubmit={DoLogin}>
-            <h3>Login</h3>
-            <div className="form-group">
-              <input
-                placeholder="Enter email"
-                type="text"
-                className="form-control"
-                required={true}
-                name="email"
-                {...email_input.el}
-              />
-            </div>
-
-            <div className="form-group">
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Enter password"
-                required={true}
-                name="password"
-                {...pass_input.el}
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-sm btn-primary btn-block text-uppercase"
-            >
-              Login
-            </button>
-
-            {error ? (
-              <small id="passwordHelp" class="text-danger">
-                {error}
-              </small>
-            ) : (
-              <p />
-            )}
-          </form>
+        <div style={{ height: "100%", backgroundColor: "rgb(208, 219, 228)" }}>
+          <Row justify="center" align="center">
+            <Col>
+              <Card
+                title=" "
+                bordered={true}
+                style={{ width: 400, marginTop: "40%" }}
+              >
+                <Form
+                  name="normal_login"
+                  className="login-form"
+                  onFinish={DoLogin}
+                >
+                  <Form.Item
+                    name="email"
+                    rules={[
+                      {
+                        type: "email",
+                        required: true,
+                        message: "Please input your Email!",
+                      },
+                    ]}
+                  >
+                    <Input
+                      prefix={<UserOutlined className="site-form-item-icon" />}
+                      placeholder="Email"
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="password"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please input your Password!",
+                      },
+                    ]}
+                  >
+                    <Input
+                      prefix={<LockOutlined className="site-form-item-icon" />}
+                      type="password"
+                      placeholder="Password"
+                    />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button
+                      type="danger"
+                      htmlType="submit"
+                      className="login-form-button"
+                    >
+                      Log in
+                    </Button>
+                    <Link to="/registration">Or register now!</Link>
+                  </Form.Item>
+                  {error ? <Alert message={error} type="error" /> : ""}
+                </Form>
+              </Card>
+            </Col>
+          </Row>
         </div>
-      )}
-    </div>
   );
 }

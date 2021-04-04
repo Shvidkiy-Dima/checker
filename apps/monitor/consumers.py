@@ -1,5 +1,8 @@
+import json, time
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-import json
+from channels.db import database_sync_to_async
+from monitor.models import Monitor
+from background_service.fetcher.workers.http_worker import HttpWorker
 
 
 class MessageConsumer(AsyncJsonWebsocketConsumer):
@@ -32,4 +35,5 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
         #     await self.send(json.dumps({'status': 'Method not exists'}))
 
     async def send_log(self, event):
+        print(event)
         await self.send(json.dumps({"type": 'log', 'data': event['data']}))

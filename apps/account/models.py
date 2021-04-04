@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from utils.models import BaseModel
 from device import models as device_models
+from configs.models import UserConfig
 
 
 class UserManager(BaseUserManager):
@@ -11,6 +12,7 @@ class UserManager(BaseUserManager):
     def make_client(self, email):
         user = self.create(email=email)
         ClientProfile.objects.create(user=user)
+        UserConfig.objects.create(user=user)
         return user
 
 
@@ -23,6 +25,7 @@ class UserQuerySet(models.QuerySet):
 class User(AbstractUser):
     username = models.CharField(max_length=124, null=True, blank=True, default=None)
     email = models.EmailField(unique=True)
+    telegram_chat_id = models.CharField(max_length=1024, null=True, blank=True, default=None)
 
     objects = UserManager.from_queryset(UserQuerySet)()
 

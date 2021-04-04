@@ -9,10 +9,12 @@ import {
 import LoginForm from "./components/auth/login_form";
 import RegForm from "./components/auth/reg_form";
 import MainPage from "./components/main_page/main";
-import DashBoard from "./components/monitors/dashboard";
+import DashBoard from "./components/monitors/new_dashboard";
+import Config from './components/config/config'
 import ProtectedRoute from "./utils/router";
 import request from "./utils/request";
 import ws from './utils/ws'
+import './App.css'
 
 
 function App() {
@@ -64,9 +66,15 @@ function App() {
           <LoginForm auth={isAutheticated} login={login} />
         </Route>
 
-        <ProtectedRoute exact path="/dashboard" auth={isAutheticated}>
-          <DashBoard user={User} logout={logout} ws={ws}/>
+
+        <ProtectedRoute exact path="/dashboard/config" auth={isAutheticated}>
+          <Config user={User}/>
         </ProtectedRoute>
+
+
+        <Route exact path="/dashboard">
+          <DashBoard user={User} logout={logout} ws={ws}/>
+        </Route>
 
         <Route exact path="/">
           <MainPage auth={isAutheticated} />

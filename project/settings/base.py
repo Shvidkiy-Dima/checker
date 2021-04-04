@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'utils.apps.UtilsConfig',
     'monitor.apps.MonitorConfig',
     'device.apps.DeviceConfig',
+    'configs.apps.ConfigsConfig',
+    'notification.apps.NotificationConfig',
 
     'corsheaders',
     'rest_framework',
@@ -168,4 +170,43 @@ CHANNEL_LAYERS = {
 PUSH_NOTIFICATIONS_SETTINGS = {
         "FCM_API_KEY": 'AAAAU26WSJw:APA91bE5VYuX4_3Psa3xhOo8lrYgTVTYci77ozKs_7ajNExfViUbPHRWsVCd8tq4s8xd73odb3TYC4ph4bpCYRykN3D1ffAh1syRHZV2_LMK_wKip4007kWMf8AUe7cUoknFK95d2Yt0',
         "UPDATE_ON_DUPLICATE_REG_ID": True
+}
+
+# Telegram
+CONFIRMATION_TELEGRAM_EXPIRATION = 12
+TELEGRAM_BOT_NAME = 'IsaliveProjectNotificationsBot'
+TELEGRAM_BOT_TOKEN = '1799516847:AAF2zRucTQOUiBg_aNu5ZqxdxfovBIBlZEY'
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
+    }
 }

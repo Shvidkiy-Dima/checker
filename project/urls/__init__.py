@@ -22,6 +22,8 @@ api_urls = [
     path('auth/', include('authorization.urls')),
     path('monitor/', include('monitor.urls')),
     path('device/', include('device.urls')),
+    path('notification/', include('notification.urls')),
+    path('config/', include('configs.urls')),
 ]
 
 

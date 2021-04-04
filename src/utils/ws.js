@@ -18,8 +18,7 @@ class WebSocketConnection {
         console.log("OPEN");
       };
       this.ws.onmessage = (response) => {
-        response = JSON.parse(response.data);
-        console.log(response)
+        response = JSON.parse(response.data); 
         let method = this.dispatch['refresh_monitors'];
         method(response);
       };

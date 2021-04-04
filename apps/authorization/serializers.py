@@ -6,6 +6,7 @@ from authorization.tasks import send_conf_email
 from utils.functions import is_valid_password
 from utils.celery import run_task
 
+
 class SignUpSerializer(serializers.ModelSerializer):
 
     class Meta:

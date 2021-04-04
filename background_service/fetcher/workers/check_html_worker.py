@@ -1,7 +1,8 @@
 import aiohttp
+from aiohttp import ClientSession, ClientTimeout
 from django.db import transaction
 from django.utils import timezone
-from background_service.workers.base import BaseWorker
+from background_service.fetcher.workers.base import BaseWorker
 from monitor.models import MonitorLog, Monitor
 from monitor.serializers import MonitorLogSerializer
 from channels.db import database_sync_to_async
@@ -9,8 +10,13 @@ from channels.db import database_sync_to_async
 
 class HtmlCheckWorker(BaseWorker):
 
-    def get_monitors(self):
-        return Monitor.objects.get_nearest().select_related('user').filter(monitor_type=Monitor.MonitorType.HTML)
+    @classmethod
+    def get_monitors(cls):
+        return Monitor.objects.get_nearest().filter(monitor_type=Monitor.MonitorType.HTML)
+
+    def start_request(self, session: ClientSession, monitor: Monitor):
+        timeout = ClientTimeout(total=5)
+        return session.get(monitor.url, timeout=timeout)
 
     async def handle_response(self, response, monitor, response_time):
         body = await response.read()
