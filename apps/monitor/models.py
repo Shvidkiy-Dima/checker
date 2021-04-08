@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 from utils.models import BaseModel
 from rest_framework import status
+from solo.models import SingletonModel
 
 
 class MonitorManager(models.Manager):
@@ -73,22 +74,37 @@ class Monitor(BaseModel):
     def interval_in_minutes(self):
         return int(self.interval.total_seconds() // 60)
 
-    @property
-    def successful_percent(self):
-        if not self.logs.exists():
+    def successful_percent(self, hours=24):
+        logs = self.last_logs_for_hours(hours)
+        if not logs:
             return None
 
-        return self.logs.filter(response_code__gte=100,
+        return logs.filter(response_code__gte=100,
                                 response_code__lt=400,
-                                error__isnull=True).count() * 100 // self.logs.count()
+                                error__isnull=True).count() * 100 // logs.count()
 
     @property
-    def unsuccessful_percent(self):
-        if not self.logs.exists():
+    def unsuccessful_percent(self, hours=24):
+        successful_percent = self.successful_percent(hours)
+        if not successful_percent:
             return None
 
-        return 100 - self.successful_percent
+        return 100 - successful_percent
 
+
+class MonitorLogManager(models.Manager):
+
+    def make(self, monitor, **kwargs):
+        user = monitor.user
+        config = MonitorConfig.get_solo()
+
+        if user.profile.is_pro and monitor.logs.count() > config.pro_log_rotation:
+            monitor.logs.last().delete()
+
+        elif monitor.logs.count() > config.free_log_rotation:
+            monitor.logs.last().delete()
+
+        return self.create(monitor=monitor, **kwargs)
 
 
 class MonitorLog(BaseModel):
@@ -97,6 +113,8 @@ class MonitorLog(BaseModel):
     response_code = models.IntegerField(null=True, blank=True, default=None)
     response_time = models.FloatField()
     keyword = models.BooleanField(null=True, blank=True, default=None)
+
+    objects = MonitorLogManager()
 
     class Meta:
         ordering = ('-created',)
@@ -107,3 +125,9 @@ class MonitorLog(BaseModel):
             return False
 
         return (not status.is_client_error(self.response_code) and not status.is_server_error(self.response_code))
+
+
+class MonitorConfig(SingletonModel):
+    pro_log_rotation = models.IntegerField(default=300000)
+    free_log_rotation = models.IntegerField(default=20000)
+

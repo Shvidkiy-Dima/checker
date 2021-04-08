@@ -8,12 +8,19 @@ export default function MultiColorProgressBar({ readings, monitor }) {
 
   console.log(readings)
   const [Value, SetValue] = React.useState('')
+  const [ResCode, setResCode] = React.useState('')
+  const [ResError, setResErro] = React.useState(null)
+
+
   let bars = readings.map(function (item, i) {
     if (item.value > 0) {
       return (
         <div
           onMouseEnter={() => {
-            SetValue(item['name']);
+            SetValue(item['created']);
+            setResCode(item['res_code'])
+            setResErro(item['error'])
+
           }}
           className="bar"
           style={{ backgroundColor: item.color, width: item.value + "%" }}
@@ -30,8 +37,8 @@ export default function MultiColorProgressBar({ readings, monitor }) {
     <div className="multicolor-bar">
         <Tooltip title={(<div>
           <Moment format='MMMM Do YYYY, h:mm:ss a'>{Value}</Moment>
-          <p>{monitor.log.response_code}</p>
-          <p>{monitor.log.error}</p>
+          <p>{ResCode}</p>
+          <p>{ResError}</p>
           </div>)}>
         <div className="bars">{bars == "" ? "" : bars}</div>
         </Tooltip>

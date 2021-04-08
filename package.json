@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ant-design/charts": "^1.1.1",
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
     "@testing-library/user-event": "^12.8.3",
@@ -10,6 +11,7 @@
     "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
     "frappe-charts": "^1.5.8",
+    "history": "^4.10.1",
     "moment": "^2.29.1",
     "react": "^17.0.1",
     "react-bootstrap": "^1.5.2",

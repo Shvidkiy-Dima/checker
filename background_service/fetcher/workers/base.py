@@ -2,6 +2,8 @@ import asyncio
 import traceback
 import time
 import json
+import pytz
+from datetime import timedelta, datetime
 from abc import ABC, abstractmethod
 from channels.layers import get_channel_layer
 from aiohttp import ClientSession, ClientTimeout
@@ -12,12 +14,14 @@ from channels.db import database_sync_to_async
 from django.utils import timezone
 from django.db import transaction
 from aio_pika import connect_robust,  Message
+from aredis import StrictRedis
 
 
 class BaseWorker(ABC):
 
     def __init__(self):
-        self.conn = None
+        redis_client = StrictRedis(host='127.0.0.1', port=6379, db=0)
+        self.cache = redis_client.cache('cache_workers')
 
     @classmethod
     @abstractmethod
@@ -70,7 +74,7 @@ class BaseWorker(ABC):
 
         await self.send_to_channels(monitor, data)
         if error or status.is_server_error(response.status) or status.is_client_error(response.status):
-            await self.send_error_msg(response, monitor, rmq_channel)
+            await self.send_error_msg(monitor, rmq_channel)
 
     @database_sync_to_async
     def handle_error(self, error, monitor, response_time):
@@ -104,7 +108,15 @@ class BaseWorker(ABC):
             print(f'Response to {monitor.url} error {e}')
             return True, str(e)
 
-    async def send_error_msg(self, response, monitor, rmq_channel):
+    async def send_error_msg(self, monitor, rmq_channel):
+        error_interval = monitor.user.userconfig.error_notification_interval
+        cache_key = f'error_notify_monitor_{monitor.id}'
+        last_error = await self.cache.get(cache_key, None)
+        if last_error and \
+                timezone.now() < (datetime.fromtimestamp(last_error, pytz.utc) + timedelta(minutes=error_interval)):
+            return
+
+        await self.cache.set(cache_key, time.time())
         data = {'url': monitor.url, 'name': monitor.name,
                 'telegram_chat_id': monitor.user.telegram_chat_id,
                 'user_id': monitor.user_id, 'enable_telegram': monitor.user.userconfig.enable_telegram}

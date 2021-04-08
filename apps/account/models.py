@@ -51,5 +51,8 @@ class ClientProfile(BaseModel):
 
     # TODO: move value into setting !!!
     amount_monitors = models.PositiveIntegerField(default=5)
-
     type = models.PositiveSmallIntegerField(choices=PlanType.choices, default=PlanType.FREE)
+
+    @property
+    def is_pro(self):
+        return self.type == ClientProfile.PlanType.PRO

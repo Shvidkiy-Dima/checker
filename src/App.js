@@ -9,12 +9,15 @@ import {
 import LoginForm from "./components/auth/login_form";
 import RegForm from "./components/auth/reg_form";
 import MainPage from "./components/main_page/main";
-import DashBoard from "./components/monitors/new_dashboard";
-import Config from './components/config/config'
+import DashBoard from "./components/monitors/dashboard";
 import ProtectedRoute from "./utils/router";
 import request from "./utils/request";
 import ws from './utils/ws'
 import './App.css'
+import { createBrowserHistory } from "history";
+
+
+const customHistory = createBrowserHistory();
 
 
 function App() {
@@ -56,7 +59,7 @@ function App() {
   React.useEffect(get_user, [isAutheticated]);
 
   return (
-    <Router>
+    <Router history={customHistory}>
       <Switch>
         <Route exact path="/registration">
           <RegForm auth={isAutheticated} />
@@ -66,13 +69,7 @@ function App() {
           <LoginForm auth={isAutheticated} login={login} />
         </Route>
 
-
-        <ProtectedRoute exact path="/dashboard/config" auth={isAutheticated}>
-          <Config user={User}/>
-        </ProtectedRoute>
-
-
-        <Route exact path="/dashboard">
+        <Route path="/dashboard">
           <DashBoard user={User} logout={logout} ws={ws}/>
         </Route>
 

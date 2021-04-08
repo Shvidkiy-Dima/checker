@@ -19,7 +19,7 @@ class ListMonitorSerializer(serializers.ModelSerializer):
         model = Monitor
         fields = ('id', 'monitor_type', 'interval_in_minutes', 'url', 'name', 'description', 'is_active', 'keyword', 'log',
                   'last_requests', 'interval', 'next_request', 'successful_percent', 'unsuccessful_percent',
-                  'request_count', 'last_request_in_seconds',)
+                  'request_count', 'last_request_in_seconds','created')
 
         read_only_fields = ('is_active', 'next_request', 'log',
                             'successful_percent', 'last_requests', 'last_request_in_seconds')

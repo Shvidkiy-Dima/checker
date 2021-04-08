@@ -36,7 +36,7 @@ class HttpWorker(BaseWorker):
             monitor.last_request = timezone.now()
             monitor.next_request = timezone.now() + monitor.interval
             monitor.save(update_fields=['last_request', 'next_request'])
-            m = MonitorLog.objects.create(response_code=response.status, response_time=response_time, monitor=monitor)
+            m = MonitorLog.objects.make(response_code=response.status, response_time=response_time, monitor=monitor)
             print('New log was created')
             data = MonitorLogSerializer(m).data
             return data

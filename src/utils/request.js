@@ -8,8 +8,9 @@ function request(config, callback, errback) {
       Authorization: "Token " + token,
     };
   }
-  axios(config).then((res) => callback(res), (err) => {
-    console.log(err);
+  axios(config).then(
+  (res) => callback(res), 
+  (err) => {
     errback(err);
   });
 }
