@@ -17,6 +17,7 @@ from aio_pika import connect_robust,  Message
 from aredis import StrictRedis
 
 
+
 class BaseWorker(ABC):
 
     def __init__(self):

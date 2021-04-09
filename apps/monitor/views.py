@@ -4,7 +4,7 @@ from monitor import serializers
 from utils.views import SerializerMapMixin
 from utils.async_drf.views import AsyncCreateViewMixin, AsyncApiView
 from monitor.services.base import monitor_first_request
-
+from channels.db import database_sync_to_async
 
 class MonitorView(SerializerMapMixin, AsyncApiView, AsyncCreateViewMixin, generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -19,7 +19,7 @@ class MonitorView(SerializerMapMixin, AsyncApiView, AsyncCreateViewMixin, generi
         try:
             data = await monitor_first_request(monitor, monitor.worker())
         except Exception as e:
-            monitor.delete()
+            await database_sync_to_async(monitor.delete)()
             raise exceptions.APIException(f'Something was wrong {e}')
 
         return data

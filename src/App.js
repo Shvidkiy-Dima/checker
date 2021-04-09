@@ -21,42 +21,40 @@ const customHistory = createBrowserHistory();
 
 
 function App() {
-  const [isAutheticated, setisAutheticated] = React.useState(false);
-  const [User, setUser] = React.useState({});
+  const [isAutheticated, setisAutheticated] = React.useState(null);
+  const [User, setUser] = React.useState(null);
 
   function login() {
-    setisAutheticated(true);
+    getUser()
   }
 
   function logout() {
+    localStorage.removeItem("token")
     setisAutheticated(false);
+    setUser(null)
+    ws.close()
   }
 
-  function get_user() {
+  function getUser() {
     request(
       { method: "get", url: "api/account/profile/" },
       (res) => {
         setUser(res.data);
         setisAutheticated(true);
+        ws.connect('ws/dashboard/')
       },
       (err) => {
         setisAutheticated(false);
+        ws.close()
       }
     );
   }
 
+  React.useEffect(getUser, []);
 
-  function ConnectToWs(){ 
-    if (isAutheticated){
-      ws.connect('ws/dashboard/')
-   }
-   else {
-       ws.close()
-   }
+  if (isAutheticated === null){
+    return null
   }
-
-  React.useEffect(ConnectToWs, [isAutheticated])
-  React.useEffect(get_user, [isAutheticated]);
 
   return (
     <Router history={customHistory}>
@@ -69,9 +67,9 @@ function App() {
           <LoginForm auth={isAutheticated} login={login} />
         </Route>
 
-        <Route path="/dashboard">
+        <ProtectedRoute path="/dashboard" auth={isAutheticated}>
           <DashBoard user={User} logout={logout} ws={ws}/>
-        </Route>
+        </ProtectedRoute>
 
         <Route exact path="/">
           <MainPage auth={isAutheticated} />

@@ -130,4 +130,6 @@ class MonitorLog(BaseModel):
 class MonitorConfig(SingletonModel):
     pro_log_rotation = models.IntegerField(default=300000)
     free_log_rotation = models.IntegerField(default=20000)
-
+    free_log_min_interval = models.DurationField(default=timedelta(minutes=5))
+    pro_max_monitors = models.IntegerField(default=50)
+    free_max_monitors = models.IntegerField(default=10)

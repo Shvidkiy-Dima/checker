@@ -22,7 +22,7 @@ export default function LoginForm({ auth, login }) {
       },
       (res) => {
         localStorage.setItem("token", res.data.token);
-        login(true);
+        login();
       },
       (err) => {
         setError(err.response ? err.response.data.detail : err.message);

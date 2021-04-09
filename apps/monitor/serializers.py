@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
-from monitor.models import Monitor, MonitorLog
+from account.models import ClientProfile
+from monitor.models import Monitor, MonitorLog, MonitorConfig
 
 
 class MonitorNestedLogSerializer(serializers.ModelSerializer):
@@ -28,7 +29,10 @@ class ListMonitorSerializer(serializers.ModelSerializer):
 class CreateMonitorSerializer(ListMonitorSerializer):
 
     def validate_interval(self, value):
-        # TODO: check for plan
+        mc = MonitorConfig.get_solo()
+        user = self.context.get('request').user
+        if user.profile.type == ClientProfile.PlanType.FREE and mc.free_log_min_interval.total_seconds() > value:
+            raise serializers.ValidationError(f'Min interval for free account {mc.free_log_min_interval}')
         return value
 
     def validate_keyword(self, value):
@@ -45,8 +49,13 @@ class CreateMonitorSerializer(ListMonitorSerializer):
         if attrs['monitor_type'] == Monitor.MonitorType.HTML and not attrs.get('keyword'):
             raise serializers.ValidationError('You must set keyword if use type HTML')
 
-        # if user.monitors.count()+1 > user.profile.amount_monitors:
-        #     raise serializers.ValidationError('Max amount monitors for current plan')
+        m_amount =  user.monitors.count()+1
+
+        if user.profile.type == ClientProfile.PlanType.FREE and m_amount > MonitorConfig.free_max_monitors:
+            raise serializers.ValidationError('Max amount monitors for free plan')
+
+        elif user.profile.type == ClientProfile.PlanType.PRO and m_amount > MonitorConfig.pro_max_monitors:
+            raise serializers.ValidationError('Max amount monitors for pro plan')
 
         attrs['user'] = user
         attrs['next_request'] = timezone.now()

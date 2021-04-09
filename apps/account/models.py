@@ -50,7 +50,6 @@ class ClientProfile(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
 
     # TODO: move value into setting !!!
-    amount_monitors = models.PositiveIntegerField(default=5)
     type = models.PositiveSmallIntegerField(choices=PlanType.choices, default=PlanType.FREE)
 
     @property

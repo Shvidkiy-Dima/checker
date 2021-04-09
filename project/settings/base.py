@@ -16,6 +16,7 @@ import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 APPS_DIR = BASE_DIR / 'apps'
+FETCHER_DIR = BASE_DIR / 'background_service/fetcher'
 
 sys.path.insert(0, str(APPS_DIR))
 
@@ -183,30 +184,37 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
+            'format': '%(levelname)s %(asctime)s %(module)s '
+            '%(process)d %(thread)d %(message)s'
+        }
     },
     'handlers': {
+            'fetcher_logfile': {
+                'level':'DEBUG',
+                'class':'logging.handlers.RotatingFileHandler',
+                'filename': FETCHER_DIR / 'logs/app.log',
+                'maxBytes': 1024*1024*1024,
+                'backupCount': 12,
+                'formatter': 'verbose',
+        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        }
+        },
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'propagate': True,
         },
-        'django.request': {
-            'handlers': ['console'],
+        'django.db.backends': {
+            'handlers': ['console', ],
             'level': 'DEBUG',
             'propagate': False,
-        }
-    }
+        },
+    },
+        'fetcher':
+            {'level': 'DEBUG',
+            'propagate': False,
+            'handlers': ['fetcher_logfile', 'console']
+         },
 }

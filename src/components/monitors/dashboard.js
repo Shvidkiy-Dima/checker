@@ -50,7 +50,7 @@ export default function DashBoard({ ws, logout }) {
             key="3"
             style={{ fontSize: "2em", marginTop: "20%" }}
             icon={<ImportOutlined style={{ fontSize: "0.8em" }} />}
-            onClick={logout()}
+            onClick={logout}
           >
             Logout
           </Menu.Item>
