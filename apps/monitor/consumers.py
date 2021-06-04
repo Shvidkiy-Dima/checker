@@ -27,13 +27,6 @@ class MessageConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content: dict, **kwargs):
         pass
-        # event = content['event']
-        # method = getattr(self, event, None)
-        # if method is not None:
-        #     await method(content['data'])
-        # else:
-        #     await self.send(json.dumps({'status': 'Method not exists'}))
 
     async def send_log(self, event):
-        print(event)
         await self.send(json.dumps({"type": 'log', 'data': event['data']}))

@@ -1,79 +1,53 @@
 import React from "react";
 import {
-  HashRouter as Router,
-  Switch,
-  Route,
-  Link,
-  useParams,
-  useRouteMatch,
-} from "react-router-dom";
-import {
+  Modal,
   Layout,
   Col,
   Row,
   Card,
   Button,
   Checkbox,
-  Slider,
+  Switch,
   Descriptions,
 } from "antd";
 import request from "../../../utils/request";
 
 export default function Config() {
   const [TelegramLink, SetTelegramLink] = React.useState(null);
+  const [TelegramEnabled, SetTelegramEnabled] = React.useState(null);
+  const [TelegramLoading, SetTelegramLoading] = React.useState(false);
+
   const [UserConfig, SetUserConfig] = React.useState(null);
-  const [Telegram, SetTelegram] = React.useState(null);
-  const [ErrorNotificationInterval, SetErrorNotificationInterval] = React.useState(null);
 
-  function GetTelegram() {
-    request(
-      {
-        url: "api/config/",
-        method: "patch",
-        data: { enable_telegram: !Telegram },
-      },
-      (res) => {
-        let is_enabled = res.data["enable_telegram"];
-        SetTelegram(is_enabled);
-        if (is_enabled) {
-          request(
-            { url: "api/notification/telegram/", method: "post" },
-            (res) => {
-              let link = res.data["deeplink"];
-              SetTelegramLink(link);
-            },
-            (err) => {}
-          );
-        }
-      },
-      (err) => {}
-    );
-  }
-
-  function SaveConf(){
-      let data = {error_notification_interval: ErrorNotificationInterval*60}
+  function DoTelegram(value) {
+    if (value === true) {
       request(
-        {
-          url: "api/config/",
-          method: "patch",
-          data: data,
+        { url: "api/notification/telegram/", method: "post" },
+        (res) => {
+          SetTelegramLoading(true);
+          SetTelegramEnabled(true)
+          let link = res.data["deeplink"];
+          SetTelegramLink(link);
         },
+        (err) => {}
+      );
+    }
+    else if (value === false){
+        request( { url: "api/notification/telegram/disable/", method: "post" },
         (res)=>{
-            SetErrorNotificationInterval(res.data.error_notification_interval)
+            SetTelegramEnabled(false)
         },
         (err)=>{
-          console.log(err)
-        }
-      )
-  }
 
+        })
+    }
+  }
 
   React.useEffect(() => {
     request(
       { url: "api/config/", method: "get" },
       (res) => {
-        SetTelegram(res.data.enable_telegram);
-        SetErrorNotificationInterval(res.data.error_notification_interval_in_minutes);
+        SetTelegramEnabled(res.data.enable_telegram);
         SetUserConfig(res.data);
       },
       (err) => {
@@ -91,53 +65,41 @@ export default function Config() {
       style={{
         margin: "24px 16px",
         padding: 24,
-        minHeight: 280,
+        minHeight: "100%",
       }}
     >
-      <Card style={{ width: "100%" }}>
+      <Modal
+        title="Please follow link"
+        visible={TelegramLink}
+        footer={[
+          <Button
+            key="back"
+            onClick={() => {
+              SetTelegramLink(null);
+            }}
+          >
+            Close
+          </Button>,
+        ]}
+      >
+        <a href={TelegramLink}>{TelegramLink}</a>
+      </Modal>
+
+      <Card style={{ width: "100%" }} title="Notifications">
         <Row gutter={16}>
           <Col span={8} style={{ marginRight: "4%" }}>
             <Descriptions layout="vertical">
-              <Descriptions.Item label="Telegram">
-                <Checkbox checked={Telegram} onChange={GetTelegram}>
-                  Checkbox
-                </Checkbox>
+              <Descriptions.Item label="Enable Telegram notifications">
+                <Switch
+                  loading={TelegramLoading}
+                  checked={TelegramEnabled}
+                  onChange={DoTelegram}
+                />
               </Descriptions.Item>
             </Descriptions>
           </Col>
-          {TelegramLink ? (
-            <Col span={8}>
-              <Descriptions layout="vertical">
-                <Descriptions.Item label="Pleaase follow">
-                  <Link to={TelegramLink}>{TelegramLink}</Link>
-                </Descriptions.Item>
-              </Descriptions>
-            </Col>
-          ) : (
-            ""
-          )}
         </Row>
       </Card>
-
-      <Card style={{ width: "100%" }}>
-        <Row gutter={16}>
-          <Col span={8} style={{ marginRight: "4%" }}>
-            Error
-            <Slider
-              min={5}
-              max={20}
-              defaultValue={ErrorNotificationInterval}
-              disabled={false}
-              onChange={(e) => {
-                SetErrorNotificationInterval(e);
-              }}
-            />
-          </Col>
-        </Row>
-      </Card>
-      <Button size="large" type="primary" onClick={SaveConf} danger>
-        Save
-      </Button>
     </Layout.Content>
   );
 }

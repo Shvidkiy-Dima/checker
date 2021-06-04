@@ -1,21 +1,17 @@
 import React from "react";
 import { Layout, Menu, Button, Modal, Slider, Form, Input } from "antd";
 import {
-  NodeExpandOutlined,
-  LineChartOutlined,
-  ImportOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
 import "./monitor.css";
-import { Link } from "react-router-dom";
 import request from "../../utils/request";
 import Monitor from "./monitor";
 import MonitorForm from "./form";
 
 const { Header, Sider, Content } = Layout;
 
-export default function DashBoard({ ws, logout }) {
-  const [Monitors, SetMonitors] = React.useState({});
+export default function DashBoard({ ws, logout, user }) {
+  const [Monitors, SetMonitors] = React.useState(null);
   const [show, setShow] = React.useState(false);
 
   const handleShow = () => setShow(true);
@@ -48,9 +44,14 @@ export default function DashBoard({ ws, logout }) {
   }
 
   React.useEffect(() => {
-    ws.dispatch.refresh_monitors = GetChangesFromWS;
+      ws.dispatch.refresh_monitors = GetChangesFromWS;
+      return ()=>{ws.dispatch.refresh_monitors = null}
   });
   React.useEffect(GetMonirots, []);
+
+  if (Monitors === null){
+    return null
+  }
 
   return (
     <Content
@@ -66,6 +67,7 @@ export default function DashBoard({ ws, logout }) {
         setShow={setShow}
         SetMonitors={SetMonitors}
         Monitors={Monitors}
+        user={user}
       />
       <div style={{ textAlign: "center", marginBottom: "2%" }}>
         <Button size="large" type="primary" onClick={handleShow} danger>

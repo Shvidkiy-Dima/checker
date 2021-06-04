@@ -8,6 +8,6 @@ def confirm(confirmation_email):
         return
 
     confirmation_email.status = confirmation_email.CONFIRMED
-    user = User.objects.make_client(confirmation_email.email)
+    user = User.objects.make_client(confirmation_email.email, confirmation_email.password)
     confirmation_email.user = user
     confirmation_email.save(updae_fields=['user', 'status'])

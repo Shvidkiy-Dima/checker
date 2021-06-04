@@ -1,4 +1,5 @@
 import React from "react";
+import {Statistic} from 'antd'
 
 export default function Timer({ monitor }) {
   const [seconds, setSeconds] = React.useState(0);

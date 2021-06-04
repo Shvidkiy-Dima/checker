@@ -1,0 +1,82 @@
+version: '3.5'
+
+services:
+
+  django:
+    build:
+      context: .
+      dockerfile: compose/django/Dockerfile
+    image: checkitout_django
+    depends_on:
+        - db
+        - rabbit
+        - redis
+        - fetcher
+        - notifier
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    volumes:
+      - ./django_logs:/app/logs
+      - ./media:/app/media
+
+  nginx:
+    build:
+      context: .
+      dockerfile: compose/nginx/Dockerfile
+    image: checkitout_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+
+  fetcher:
+    build:
+      context: .
+      dockerfile: compose/fetcher/Dockerfile
+    image: checkitout_fetcher
+    depends_on:
+      - db
+      - rabbit
+      - redis
+    restart: always
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    volumes:
+      - ./fetcher_logs:/app/background_service/fetcher/logs
+
+  notifier:
+    build:
+      context: .
+      dockerfile: compose/notifier/Dockerfile
+    image: checkitout_notifier
+    depends_on:
+      - db
+      - rabbit
+      - redis
+    restart: always
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    volumes:
+      - ./notifier_logs:/app/background_service/notifier/logs
+
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:latest
+
+  redis:
+    image: redis:latest
+
+  db:
+    hostname: db
+    image: kartoza/postgis
+    restart: always
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    env_file:
+      - ./.envs/.prod/.postgres

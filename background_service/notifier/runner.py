@@ -4,18 +4,19 @@ import django
 import os
 import sys
 import pathlib
+from django.conf import settings
 
 sys.path.append(str(pathlib.PosixPath(os.path.abspath(__file__)).parent.parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 django.setup()
 
-from background_service.notifications.senders.telegram_sender import TelegramSender
-from background_service.notifications.senders.fcm_sender import FCMSender
-from aio_pika import IncomingMessage,connect_robust
+from background_service.notifier.senders.telegram_sender import TelegramSender
+from background_service.notifier.senders.fcm_sender import FCMSender
+from background_service.utils import prepare_background_logging
+from aio_pika import IncomingMessage, connect_robust
 import json
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 
 class Dispatcher:
@@ -25,10 +26,10 @@ class Dispatcher:
     async def on_message(self, message: IncomingMessage):
         data = json.loads(message.body.decode())
         msg = f'Something wrong - {data["name"]} - {data["url"]}'
-        print(msg, data)
+        logger.info(msg)
 
-        if chat_id := data['telegram_chat_id'] and data['enable_telegram']:
-            await self.senders['telegram'].send_message(chat_id, msg)
+        if data['telegram_chat_id'] and data['enable_telegram'] and data['monitor_telegram']:
+            await self.senders['telegram'].send_message(msg, data['telegram_chat_id'], data['user_id'])
 
         await self.senders['fcm'].send_message(msg, data['user_id'])
 
@@ -45,9 +46,11 @@ class Dispatcher:
         await queue.consume(self.on_message, no_ack=True)
 
     async def run(self):
-        tasks = [self.senders['telegram'].run(), self.senders['fcm'].run(), self.check_queue()]
-        await asyncio.gather(*tasks)
+        #tasks = [self.senders['telegram'].run(), self.senders['fcm'].run(), self.check_queue()]
+        #await asyncio.gather(*tasks)
+        await self.senders['telegram'].run()
 
 
 if __name__ == '__main__':
-    asyncio.run(Dispatcher().run())
+    with prepare_background_logging(settings.NOTIFIER_DIR / 'logs/app.log'):
+        asyncio.run(Dispatcher().run())

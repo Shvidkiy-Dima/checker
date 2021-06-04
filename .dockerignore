@@ -1,0 +1,16 @@
+htmlcov
+.coverage
+*.log
+*.env
+.git
+.gitignore
+docker-compose.yml
+Dockerfile
+__pycache__
+notifier_logs
+fetcher_logs
+postgres-data
+django_logs
+build
+node_modules
+media

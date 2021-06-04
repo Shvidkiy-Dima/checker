@@ -1,3 +1,9 @@
 from django.contrib import admin
+from solo.admin import SingletonModelAdmin
+from monitor.models import MonitorConfig
 
-# Register your models here.
+
+@admin.register(MonitorConfig)
+class MonitorConfigAdmin(SingletonModelAdmin):
+    pass
+

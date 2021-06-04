@@ -1,10 +1,6 @@
 import asyncio
 from rest_framework.views import APIView
 from asgiref.sync import sync_to_async
-from channels.db import database_sync_to_async
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import generics
 
 
 class AsyncApiView(APIView):
@@ -44,25 +40,3 @@ class AsyncApiView(APIView):
 
         self.response = self.finalize_response(request, response, *args, **kwargs)
         return self.response
-
-    
-class AsyncCreateViewMixin(generics.CreateAPIView):
-
-    async def post(self, request, *args, **kwargs):
-        await self.start_async_view(request, *args, **kwargs)
-        serializer = self.get_serializer(data=request.data)
-        data, serializer = await self.handle_serializer(serializer)
-        data = await self.end_async_view(data, serializer, request, *args, **kwargs)
-        return Response(data, status=status.HTTP_201_CREATED)
-
-    @database_sync_to_async
-    def handle_serializer(self, serializer):
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return serializer.data, serializer
-
-    async def start_async_view(self, request, *args, **kwargs):
-        pass
-
-    async def end_async_view(self, data, serializer, request, *args, **kwargs):
-        return data

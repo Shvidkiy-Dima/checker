@@ -8,6 +8,7 @@ import {
   Switch,
   Descriptions,
   Popover,
+  Statistic
 } from "antd";
 import {
   CheckCircleTwoTone,
@@ -24,7 +25,6 @@ import convert_for_bar from '../../utils/methods'
 export default function Monitor({ monitor, delete_monitor}) {
 
   const [IsActive, SetIsAtive] = React.useState(monitor.is_active);
-  const [BarMonitors, SetBarMonitor] = React.useState([]);
 
   function TurnOn(value) {
     request(
@@ -42,17 +42,14 @@ export default function Monitor({ monitor, delete_monitor}) {
     );
   }
 
-  React.useEffect(()=>{
-    let new_monitors = convert_for_bar(monitor.last_requests, monitor.interval)
-    SetBarMonitor(new_monitors)
-  }, [monitor.log.created])
-
+  let logs_data = React.useMemo(()=>convert_for_bar(monitor.last_requests, monitor.interval), [monitor.log.created])
 
   return (
     <Card style={{ width: "100%" }}>
       <Row gutter={16}>
         <Col span={8} style={{ marginRight: "4%" }}>
-        <Link to={'/dashboard/' + monitor.id}><h1>{ monitor.name } </h1></Link>
+        <Link to={'/dashboard/' + monitor.id} style={{fontSize: '2em'}}>{ monitor.name }</Link>
+        <br/>
           { monitor.url }
         </Col>
         <Col span={12}>
@@ -75,8 +72,10 @@ export default function Monitor({ monitor, delete_monitor}) {
               </Button>)
             }
             </Descriptions.Item>
-            <Descriptions.Item>
-              <Button onClick={()=>{
+            <Descriptions.Item label="interval">
+                {monitor.interval_in_minutes} min
+
+              <Button style={{marginLeft: '20%'}} onClick={()=>{
                 delete_monitor(monitor.id)
               }} danger>
                 Remove <CloseOutlined />
@@ -84,14 +83,14 @@ export default function Monitor({ monitor, delete_monitor}) {
             </Descriptions.Item>
           </Descriptions>
         </Col>
-        <Col>
-          <Switch checkedChildren="On" unCheckedChildren="Off" onChange={TurnOn} checked={IsActive} />
-        </Col>
         <Col span={8}>
           <Bar
-            readings={BarMonitors}
+            readings={logs_data}
             monitor={monitor}
           />
+                  <Col>
+          <Switch checkedChildren="On" unCheckedChildren="Off" onChange={TurnOn} checked={IsActive} />
+        </Col>
         </Col>
       </Row>
     </Card>

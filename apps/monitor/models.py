@@ -14,9 +14,6 @@ class MonitorManager(models.Manager):
 
 class MonitorQuerySet(models.QuerySet):
 
-    def available(self):
-        return self.filter(last_request__isnull=False)
-
     def by_user(self, user):
         return self.filter(user=user)
 
@@ -38,7 +35,7 @@ class Monitor(BaseModel):
     keyword = models.CharField(max_length=124, null=True, blank=True, default=None)
     user = models.ForeignKey('account.User', on_delete=models.PROTECT, related_name='monitors')
     monitor_type = models.PositiveSmallIntegerField(choices=MonitorType.choices)
-    last_request = models.DateTimeField(null=True, blank=True, default=None)
+    last_request = models.DateTimeField()
     next_request = models.DateTimeField()
     interval = models.DurationField(validators=[MinValueValidator(timedelta(minutes=1)),
                                                 MaxValueValidator(timedelta(minutes=60))])
@@ -46,8 +43,15 @@ class Monitor(BaseModel):
     name = models.CharField(max_length=124)
     description = models.TextField(null=True, blank=True, default=None)
     is_active = models.BooleanField(default=True)
+    by_telegram = models.BooleanField(null=True, blank=True, default=None)
+    error_notification_interval = models.DurationField(default=timedelta(minutes=5),
+                                                       validators=[MinValueValidator(timedelta(minutes=5)),
+                                                                   MaxValueValidator(timedelta(minutes=60))])
 
     objects = MonitorManager.from_queryset(MonitorQuerySet)()
+
+    class Meta:
+        ordering = ('-created',)
 
     @property
     def last_request_in_seconds(self):
@@ -55,7 +59,6 @@ class Monitor(BaseModel):
             return None
 
         return (timezone.now() - self.last_request).seconds
-
 
     @property
     def worker(self):
@@ -86,10 +89,14 @@ class Monitor(BaseModel):
     @property
     def unsuccessful_percent(self, hours=24):
         successful_percent = self.successful_percent(hours)
-        if not successful_percent:
+        if successful_percent is None:
             return None
 
         return 100 - successful_percent
+
+    @property
+    def error_notification_interval_in_minutes(self):
+        return int(self.error_notification_interval.total_seconds() // 60)
 
 
 class MonitorLogManager(models.Manager):

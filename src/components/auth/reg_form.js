@@ -39,7 +39,7 @@ export default function LoginForm({ auth, login }) {
   }
 
   return (
-        <div style={{ height: "100%", backgroundColor: "rgb(208, 219, 228)" }}>
+        <div style={{ height: "100%"}}>
           <Row justify="center" align="center">
             <Col>
               <Card

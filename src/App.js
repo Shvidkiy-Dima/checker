@@ -1,11 +1,4 @@
 import React from "react";
-import {
-  HashRouter as Router,
-  Switch,
-  Link,
-  Route,
-  Redirect,
-} from "react-router-dom";
 import LoginForm from "./components/auth/login_form";
 import RegForm from "./components/auth/reg_form";
 import MainPage from "./components/main_page/main";
@@ -15,6 +8,11 @@ import request from "./utils/request";
 import ws from './utils/ws'
 import './App.css'
 import { createBrowserHistory } from "history";
+import {
+  HashRouter as Router,
+  Switch,
+  Route,
+} from "react-router-dom";
 
 
 const customHistory = createBrowserHistory();
@@ -59,18 +57,18 @@ function App() {
   return (
     <Router history={customHistory}>
       <Switch>
-        <Route exact path="/registration">
+        {/* <Route exact path="/registration">
           <RegForm auth={isAutheticated} />
-        </Route>
+        </Route> */}
 
         <Route exact path="/login">
           <LoginForm auth={isAutheticated} login={login} />
         </Route>
 
         <ProtectedRoute path="/dashboard" auth={isAutheticated}>
-          <DashBoard user={User} logout={logout} ws={ws}/>
+          <DashBoard user={User} logout={logout} ws={ws} setUser={setUser}/>
         </ProtectedRoute>
-
+        
         <Route exact path="/">
           <MainPage auth={isAutheticated} />
         </Route>

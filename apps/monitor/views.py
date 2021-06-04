@@ -1,28 +1,31 @@
-from rest_framework import generics, permissions, exceptions
+from rest_framework import generics, permissions, exceptions, status
+from rest_framework.response import Response
 from monitor.models import Monitor
 from monitor import serializers
 from utils.views import SerializerMapMixin
-from utils.async_drf.views import AsyncCreateViewMixin, AsyncApiView
-from monitor.services.base import monitor_first_request
+from utils.async_drf.views import AsyncApiView
 from channels.db import database_sync_to_async
 
-class MonitorView(SerializerMapMixin, AsyncApiView, AsyncCreateViewMixin, generics.ListAPIView):
+
+class MonitorView(SerializerMapMixin, AsyncApiView, generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_map = {'get': serializers.ListMonitorSerializer,
                       'post': serializers.CreateMonitorSerializer}
 
     def get_queryset(self):
-        return Monitor.objects.by_user(self.request.user).available()
+        return Monitor.objects.by_user(self.request.user)
 
-    async def end_async_view(self, data, serializer, request, *args, **kwargs):
-        monitor = serializer.instance
-        try:
-            data = await monitor_first_request(monitor, monitor.worker())
-        except Exception as e:
-            await database_sync_to_async(monitor.delete)()
-            raise exceptions.APIException(f'Something was wrong {e}')
+    async def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        await serializer.async_validate()
+        data, serializer = await self.handle_serializer(serializer)
+        return Response(data, status=status.HTTP_201_CREATED)
 
-        return data
+    @database_sync_to_async
+    def handle_serializer(self, serializer):
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data, serializer
 
 
 class MonitorDetailView(SerializerMapMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -31,4 +34,4 @@ class MonitorDetailView(SerializerMapMixin, generics.RetrieveUpdateDestroyAPIVie
                       'patch': serializers.UpdateMonitorSerializer}
 
     def get_queryset(self):
-        return Monitor.objects.by_user(self.request.user).available()
+        return Monitor.objects.by_user(self.request.user)

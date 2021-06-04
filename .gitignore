@@ -79,11 +79,17 @@ celerybeat-schedule
 
 # dotenv
 .env
-
+.envs
+etc
 
 # virtualenv
 venv/
 ENV/
+
+notifier_logs
+fetcher_logs
+postgres-data
+django_logs
 
 # Spyder project settings
 .spyderproject
@@ -152,3 +158,4 @@ crashlytics-build.properties
 fabric.properties
 
 node_modules/
+media

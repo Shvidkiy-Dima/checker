@@ -12,12 +12,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 django.setup()
 
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.utils.deep_linking import get_start_link
+from aiogram.utils import exceptions
 from channels.db import database_sync_to_async
 from notification.models import TelegramConfirmation
+from account.models import User
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 
 class TelegramSender:
@@ -36,6 +36,8 @@ class TelegramSender:
             tc.status = TelegramConfirmation.Status.CONFIRMED
             user = tc.user
             user.telegram_chat_id = chat_id
+            user.userconfig.enable_telegram = True
+            user.userconfig.save(update_fields=['enable_telegram'])
             user.save(update_fields=['telegram_chat_id'])
             tc.save(update_fields=['status'])
 
@@ -47,17 +49,37 @@ class TelegramSender:
         key = message.get_args()
         channel_id = message.chat['id']
         if not key:
-            await TelegramSender.bot.send_message(channel_id, 'Please, check url. That must be something like this '
-                                   'https://t.me/IsaliveProjectNotificationsBot?start={token}')
+            msg = 'Please, check url. That must be something like this https://t.me/IsaliveProjectNotificationsBot?start={token}'
+            await TelegramSender.bot.send_message(channel_id, msg)
+            return
 
         user = await TelegramSender.associate_user_with_telegram(channel_id, key)
         if user is None:
             await TelegramSender.bot.send_message(channel_id, 'Your link have been expired, please generate new link')
+            return
 
+        logger.info(f'TELEGRAM: Start new dialog with {user.email}')
         await message.reply("Hi! Start monitoring")
 
     async def run(self):
         await self.dp.start_polling()
 
-    async def send_message(self, chat_id, msg):
-        await self.bot.send_message(chat_id, msg)
+    async def send_message(self, msg, chat_id, user_id):
+        try:
+            await self.bot.send_message(chat_id, msg)
+            logger.info(f"Message was sent to {user_id}")
+        except Exception as e:
+            await self._handle_send_message_error(e, user_id)
+
+    @database_sync_to_async
+    def _handle_send_message_error(self, error, user_id):
+        if isinstance(error, exceptions.ChatNotFound):
+            with transaction.atomic():
+                user = User.objects.get(id=user_id)
+                logger.info(f'TELEGRAM: Send message to {user.email} - chat not found')
+                user.userconfig.enable_telegram = False
+                user.telegram_chat_id = None
+                user.save(update_fields=['telegram_chat_id'])
+                user.userconfig.save(update_fields=['enable_telegram'])
+                user.alerts.make_for_telegram('We could not find telegram dialog with our bot, please follow '
+                                              'to config and enable telegram notifications again')

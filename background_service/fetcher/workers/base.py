@@ -3,6 +3,7 @@ import traceback
 import time
 import json
 import pytz
+import logging
 from datetime import timedelta, datetime
 from abc import ABC, abstractmethod
 from channels.layers import get_channel_layer
@@ -16,13 +17,13 @@ from django.db import transaction
 from aio_pika import connect_robust,  Message
 from aredis import StrictRedis
 
+logger = logging.getLogger()
 
 
 class BaseWorker(ABC):
 
     def __init__(self):
-        redis_client = StrictRedis(host='127.0.0.1', port=6379, db=0)
-        self.cache = redis_client.cache('cache_workers')
+        self.cache = None
 
     @classmethod
     @abstractmethod
@@ -34,7 +35,7 @@ class BaseWorker(ABC):
         pass
 
     @abstractmethod
-    async def handle_response(self, response, monitor, response_time):
+    async def handle_response(self, response, monitor, response_time, body):
         pass
 
     @abstractmethod
@@ -42,15 +43,18 @@ class BaseWorker(ABC):
         pass
 
     def run(self, conn):
+        logger.info(f'Start {self.__class__.__name__}')
         asyncio.run(self.main(conn))
 
     async def main(self, conn):
+        redis_client = self.get_redis_conn()
+        self.cache = redis_client.cache('cache_workers')
         rmq_conn = await self.get_rmq_conn()
         rmq_channel = await rmq_conn.channel()
         while True:
             monitors_id = conn.recv()
             if monitors_id:
-                print(f'{self.__class__.__name__} - {monitors_id}')
+                logger.info(f'New batch: {self.__class__.__name__} - {len(monitors_id)} monitors')
 
             try:
                 qs = await self.fetch_monitors(monitors_id)
@@ -59,20 +63,22 @@ class BaseWorker(ABC):
                     await asyncio.gather(*tasks)
 
             except Exception as e:
-                print(traceback.format_exc())
+                logger.error(f'ERROR: {traceback.format_exc()}')
 
             conn.send(1)
 
     async def fetch(self, monitor, session, rmq_channel):
+        logger.info(f'Start processing monitor {monitor.url} for user {monitor.user.email}')
         start = time.monotonic()
-        error, response = await self.handle_request(monitor, session)
+        error, response, body = await self.handle_request(session, monitor.url)
         response_time = time.monotonic() - start
 
         if not error:
-            data = await self.handle_response(response, monitor, response_time)
+            data = await self.handle_response(response, monitor, response_time, body)
         else:
             data = await self.handle_error(response, monitor, response_time)
 
+        logger.info(f'New log created for {monitor.url}. Next request - {data["monitor"]["next_request"]}')
         await self.send_to_channels(monitor, data)
         if error or status.is_server_error(response.status) or status.is_client_error(response.status):
             await self.send_error_msg(monitor, rmq_channel)
@@ -83,44 +89,55 @@ class BaseWorker(ABC):
             monitor.last_request = timezone.now()
             monitor.next_request = timezone.now() + monitor.interval
             monitor.save(update_fields=['last_request', 'next_request'])
-            m = MonitorLog.objects.create(error=error, response_time=response_time, monitor=monitor)
-            print('New log was created')
-            data = MonitorLogSerializer(m).data
+            log = self.make_log(monitor, response_time, error=error)
+            data = MonitorLogSerializer(log).data
             return data
+
+    def make_log(self, monitor, response_time, body=b'', error=None, response_code=None):
+        log = MonitorLog.objects.create(response_code=response_code,
+                                        response_time=response_time,
+                                        error=error,
+                                        monitor=monitor)
+        return log
 
     async def get_rmq_conn(self):
         return await connect_robust()
+
+
+    def get_redis_conn(self):
+        return StrictRedis(host='127.0.0.1', port=6379, db=0)
 
     async def send_to_channels(self, monitor, data):
         layer = get_channel_layer()
         await layer.group_send(str(monitor.user), {'type': 'send_log', 'data': data})
 
-    def start_request(self, session: ClientSession, monitor: Monitor):
-        timeout = ClientTimeout(total=5)
-        return session.head(monitor.url, timeout=timeout)
-
-    async def handle_request(self,  monitor, session):
+    async def handle_request(self, session: ClientSession, url, timeout=5, method='get'):
+        timeout = ClientTimeout(total=timeout)
         try:
-            async with self.start_request(session, monitor) as response:
-                print(f'Response to {monitor.url} status {response.status}')
-                return False, response
+            async with session.request(method, url, timeout=timeout) as response:
+                logger.info(f'Request to {url} status {response.status}')
+                return False, response, await response.read()
 
         except Exception as e:
-            print(f'Response to {monitor.url} error {e}')
-            return True, str(e)
+            logger.info(f'Request to {url} error {e}')
+            return True, str(e), b''
 
     async def send_error_msg(self, monitor, rmq_channel):
-        error_interval = monitor.user.userconfig.error_notification_interval
+        error_interval = monitor.error_notification_interval
         cache_key = f'error_notify_monitor_{monitor.id}'
         last_error = await self.cache.get(cache_key, None)
-        if last_error and \
-                timezone.now() < (datetime.fromtimestamp(last_error, pytz.utc) + timedelta(minutes=error_interval)):
+        if last_error and timezone.now() < (datetime.fromtimestamp(last_error, pytz.utc) + error_interval):
+            logger.info(f'Error notification already was sent to {monitor.user.email}. '
+                        f'Next {datetime.fromtimestamp(last_error, pytz.utc) + error_interval}')
             return
 
+        logger.info(f'Send error notification to {monitor.user.email}')
         await self.cache.set(cache_key, time.time())
         data = {'url': monitor.url, 'name': monitor.name,
                 'telegram_chat_id': monitor.user.telegram_chat_id,
-                'user_id': monitor.user_id, 'enable_telegram': monitor.user.userconfig.enable_telegram}
+                'user_id': monitor.user_id,
+                'enable_telegram': monitor.user.userconfig.enable_telegram,
+                'monitor_telegram': monitor.by_telegram}
         data = json.dumps(data).encode()
         await rmq_channel.default_exchange.publish(Message(data), routing_key="notification")
 

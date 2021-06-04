@@ -1,14 +1,15 @@
- import React from "react";
+import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { Layout, Col, Row, Descriptions } from "antd";
 import "../monitor.css";
 import request from "../../../utils/request";
 import NotFound from "./not_found";
 import { Line } from "@ant-design/charts";
-import { DoubleLeftOutlined } from "@ant-design/icons";
 import Bar from "../bar";
 import convert_for_bar from "../../../utils/methods";
 import Moment from "react-moment";
+import Moment_f from "moment";
+import { Card, List, Progress} from "antd";
 
 export default function DetailMonitor() {
   const [monitor, setMonitor] = React.useState(null);
@@ -25,10 +26,14 @@ export default function DetailMonitor() {
         SetBarMonitor(
           convert_for_bar(res.data.last_requests, res.data.interval)
         );
-        let data = [];
-        res.data.last_requests.forEach((i) => {
-          data.push({ date: i.created, res_time: i.response_time });
+        let data = res.data.last_requests.map((i) => {
+          return {
+            date: Moment_f.utc(i.created).local().format("HH:mm:ss"),
+            res_time: i.response_time,
+          };
         });
+        console.log(res.data.last_requests);
+        console.log(data);
         setConfig({
           data,
           height: 400,
@@ -53,14 +58,6 @@ export default function DetailMonitor() {
 
   return (
     <div>
-      <Layout.Header className="site-layout-background" style={{ padding: 0 }}>
-        <Link to="/dashboard">
-          {" "}
-          <DoubleLeftOutlined
-            style={{ fontSize: "2em", marginRight: "10%" }}
-          />{" "}
-        </Link>
-      </Layout.Header>
       <Layout.Content
         className="site-layout-background"
         style={{
@@ -71,28 +68,43 @@ export default function DetailMonitor() {
       >
         <Row gutter={16}>
           <Col span={24}>
-          Last 24 hours monitoring
+            <h1 style={{ fontSize: "1.5em" }}>{monitor.name}</h1>
           </Col>
+          <Col span={24}>
+            <h2>
+              <Link to={monitor.url}>{monitor.url}</Link>
+            </h2>
+          </Col>
+          <Col span={24}>Last 24 hours monitoring</Col>
           <Col span={16}>
             <Bar readings={BarMonitor} monitor={monitor} />
           </Col>
-          <Col span={8}>
-            <Descriptions layout="vertical">
-              <Descriptions.Item label="Interval">
-                {monitor.interval}
-              </Descriptions.Item>
-              <Descriptions.Item label="Created">
-                <Moment format="MMMM Do YYYY, h:mm:ss a">
-                  {monitor.created}
-                </Moment>
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
+
+
+          </Row>
+          <Row gutter={16}>
           <Col span={16}>
-          <h3>Last 24 hours response time</h3>
+            <h3>Last 24 hours response time</h3>
             <Line {...config} />;
           </Col>
-        </Row>
+          <Col span={8}>
+            <Row justify="center">
+              <List>
+                <List.Item>
+                  <Card  title='Interval' bordered={false}>
+                    {monitor.interval_in_minutes}min
+                    </Card>
+                </List.Item>
+                <List.Item>
+                  <Card title='Created' bordered={false}>{Moment_f.utc(monitor.created).local().format("Y/M/D HH:mm:ss")}</Card>
+                </List.Item>
+                <List.Item>
+                  <Card title='Notifications' bordered={false}>Telegram</Card>
+                </List.Item>
+              </List>
+            </Row>
+          </Col>
+          </Row>
       </Layout.Content>
     </div>
   );

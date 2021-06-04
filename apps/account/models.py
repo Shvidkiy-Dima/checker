@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from django.db.models import F
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from utils.models import BaseModel
 from device import models as device_models
@@ -9,8 +10,10 @@ class UserManager(BaseUserManager):
     use_in_migrations = False
 
     @transaction.atomic
-    def make_client(self, email):
-        user = self.create(email=email)
+    def make_client(self, email, password):
+        user = User(email=email)
+        user.set_password(password)
+        user.save()
         ClientProfile.objects.create(user=user)
         UserConfig.objects.create(user=user)
         return user
@@ -40,6 +43,10 @@ class User(AbstractUser):
         fcm_ios = device_models.FCMDeviceIos.objects.by_user(self).first()
         return fcm_android or fcm_ios
 
+    @property
+    def has_telegram(self):
+        return self.telegram_chat_id is not None
+
 
 class ClientProfile(BaseModel):
 
@@ -55,3 +62,33 @@ class ClientProfile(BaseModel):
     @property
     def is_pro(self):
         return self.type == ClientProfile.PlanType.PRO
+
+
+class AlertManager(models.Manager):
+
+    def make_for_telegram(self, msg):
+        return self.create(alert_type=ClientAlert.ALERT_TYPE.TELEGRAM, msg=msg)
+
+
+class AlertQuerySet(models.QuerySet):
+
+    def active(self):
+        return self.filter(counter__gt=0, enable=True)
+
+    def decrease(self):
+        self.update(counter=F('counter')-1)
+
+
+class ClientAlert(BaseModel):
+
+    class ALERT_TYPE(models.IntegerChoices):
+        TELEGRAM = 0, 'Telegram'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='alerts')
+    alert_type = models.PositiveSmallIntegerField(choices=ALERT_TYPE.choices)
+    msg = models.TextField()
+    counter = models.PositiveSmallIntegerField(default=5)
+    enable = models.BooleanField(default=True)
+
+    objects = AlertManager.from_queryset(AlertQuerySet)()
+
