@@ -28,5 +28,8 @@ def prepare_background_logging(log_path):
     listener.start()
     try:
         yield
+    except Exception as e:
+        logger.error(str(e))
+        raise e
     finally:
         listener.stop()

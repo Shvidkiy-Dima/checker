@@ -169,11 +169,17 @@ REST_DATETIME_FORMAT = '%m-%d-%Y %H:%M:%S'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+MQ_HOST = os.environ.get('MQ_HOST', 'localhost')
+MQ_PORT = int(os.environ.get('MQ_PORT', 5672))
+
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [(REDIS_HOST, 6379)],
         },
     },
 }

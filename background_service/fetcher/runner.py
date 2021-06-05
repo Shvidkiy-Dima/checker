@@ -26,7 +26,7 @@ logger = logging.getLogger()
 
 class Runner:
     # Subprocesses per workers
-    workers = [{'name': HttpWorker, 'cpu': 3}, {'name': HtmlCheckWorker, 'cpu': 3}]
+    workers = [{'name': HttpWorker, 'cpu': os.cpu_count()}]
 
     @classmethod
     def start_loop(cls):
@@ -58,6 +58,7 @@ class Runner:
                 if all(c.poll() for c, _ in proc_params):
                     chunks_for_worker = len(proc_params)
                     qs = worker.get_monitors().active()
+
                     # split monitors into chunks - example 1200 monitors / 3 workers = 400 monitors per worker
                     monitors = np.array_split(qs.values_list('id', flat=True), chunks_for_worker)
 

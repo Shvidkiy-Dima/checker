@@ -13,6 +13,7 @@ from monitor.serializers import MonitorLogSerializer
 from rest_framework import status
 from channels.db import database_sync_to_async
 from django.utils import timezone
+from django.conf import settings
 from django.db import transaction
 from aio_pika import connect_robust,  Message
 from aredis import StrictRedis
@@ -81,7 +82,10 @@ class BaseWorker(ABC):
         logger.info(f'New log created for {monitor.url}. Next request - {data["monitor"]["next_request"]}')
         await self.send_to_channels(monitor, data)
         if error or status.is_server_error(response.status) or status.is_client_error(response.status):
-            await self.send_error_msg(monitor, rmq_channel)
+            status_code = response.status if not error else "Server error"
+            reason = response if error else response.reason
+            error_msg = f'{status_code}:  {reason}'
+            await self.send_error_msg(monitor, rmq_channel, error_msg)
 
     @database_sync_to_async
     def handle_error(self, error, monitor, response_time):
@@ -101,11 +105,11 @@ class BaseWorker(ABC):
         return log
 
     async def get_rmq_conn(self):
-        return await connect_robust()
+        return await connect_robust(host=settings.MQ_HOST, port=settings.MQ_PORT)
 
 
     def get_redis_conn(self):
-        return StrictRedis(host='127.0.0.1', port=6379, db=0)
+        return StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
     async def send_to_channels(self, monitor, data):
         layer = get_channel_layer()
@@ -122,7 +126,7 @@ class BaseWorker(ABC):
             logger.info(f'Request to {url} error {e}')
             return True, str(e), b''
 
-    async def send_error_msg(self, monitor, rmq_channel):
+    async def send_error_msg(self, monitor, rmq_channel, error_msg):
         error_interval = monitor.error_notification_interval
         cache_key = f'error_notify_monitor_{monitor.id}'
         last_error = await self.cache.get(cache_key, None)
@@ -137,7 +141,8 @@ class BaseWorker(ABC):
                 'telegram_chat_id': monitor.user.telegram_chat_id,
                 'user_id': monitor.user_id,
                 'enable_telegram': monitor.user.userconfig.enable_telegram,
-                'monitor_telegram': monitor.by_telegram}
+                'monitor_telegram': monitor.by_telegram,
+                'error_msg': error_msg}
         data = json.dumps(data).encode()
         await rmq_channel.default_exchange.publish(Message(data), routing_key="notification")
 

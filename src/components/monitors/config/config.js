@@ -90,10 +90,14 @@ export default function Config() {
           <Col span={8} style={{ marginRight: "4%" }}>
             <Descriptions layout="vertical">
               <Descriptions.Item label="Enable Telegram notifications">
-                <Switch
+                {/* <Switch
                   loading={TelegramLoading}
                   checked={TelegramEnabled}
                   onChange={DoTelegram}
+                /> */}
+                <Switch
+                  checked={TelegramEnabled}
+                  disabled
                 />
               </Descriptions.Item>
             </Descriptions>

@@ -19,7 +19,8 @@ COPY ./requirements /requirements
 
 RUN pip install --no-cache-dir -r /requirements/base.txt && rm -rf /requirements
 
-COPY ./compose/django/start.sh /start.sh
+COPY ./compose/fetcher/start.sh /start.sh
+COPY ./compose/check_conn.py /app/check_conn.py
 RUN chmod +x /start.sh
 
 COPY . /app

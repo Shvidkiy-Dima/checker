@@ -25,7 +25,7 @@ class Dispatcher:
 
     async def on_message(self, message: IncomingMessage):
         data = json.loads(message.body.decode())
-        msg = f'Something wrong - {data["name"]} - {data["url"]}'
+        msg = f'Something wrong - {data["name"]} - {data["url"]} - {data["error_msg"]}'
         logger.info(msg)
 
         if data['telegram_chat_id'] and data['enable_telegram'] and data['monitor_telegram']:
@@ -34,7 +34,8 @@ class Dispatcher:
         await self.senders['fcm'].send_message(msg, data['user_id'])
 
     async def check_queue(self):
-        connection = await connect_robust()
+        connection = await connect_robust(host=settings.MQ_HOST,
+                                          port=settings.MQ_PORT)
 
         # Creating a channel
         channel = await connection.channel()
@@ -47,8 +48,8 @@ class Dispatcher:
 
     async def run(self):
         #tasks = [self.senders['telegram'].run(), self.senders['fcm'].run(), self.check_queue()]
-        #await asyncio.gather(*tasks)
-        await self.senders['telegram'].run()
+        tasks = [self.senders['telegram'].run(), self.check_queue()]
+        await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
