@@ -91,6 +91,7 @@ export default function LoginForm({ auth, login }) {
                 >
                   Log in
                 </Button>
+                <Link to="/registration">Or register now</Link>
               </Form.Item>
               {error.map((e, i)=><Alert message={e} type="error" key={i} />)}
             </Form>

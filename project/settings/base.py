@@ -35,9 +35,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-API_HOST = 'localhost:8000'
-SITE_HOST = 'localhost:8000'
-LOGIN_PAGE = SITE_HOST + '/login/'
+API_HOST = 'http://localhost'
+SITE_HOST = 'http://localhost'
+LOGIN_PAGE = SITE_HOST + '/#/login/'
 
 # Application definition
 
@@ -159,10 +159,21 @@ AUTH_USER_MODEL = 'account.User'
 
 CONFIRMATION_EMAIL_EXPIRATION = 24
 
+DEFAULT_FROM_EMAIL = 'checkitout.service@mail.ru'
+EMAIL_USE_SSL = True
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_HOST_USER = 'checkitout.service@mail.ru'
+EMAIL_HOST_PASSWORD = '19960213Za' #os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = 465
+
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_THROTTLE_RATES': {
+        "auth": '100/m'
+    },
 }
 REST_DATE_FORMAT = '%m-%d-%Y'
 REST_DATETIME_FORMAT = '%m-%d-%Y %H:%M:%S'
@@ -171,15 +182,28 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 MQ_HOST = os.environ.get('MQ_HOST', 'localhost')
 MQ_PORT = int(os.environ.get('MQ_PORT', 5672))
+MQ_USER = os.environ.get('RABBITMQ_DEFAULT_USER', 'guest')
+MQ_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
 
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+
+
+# Celery settings
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+USE_CELERY = True
+
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(REDIS_HOST, 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
@@ -231,4 +255,3 @@ LOGGING = {
     },
     },
 }
-

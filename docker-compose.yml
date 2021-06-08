@@ -70,6 +70,21 @@ services:
     image: rabbitmq:3.8.16-management
     ports:
       - "15672:15672"
+    env_file:
+      - ./.envs/.prod/.rmq
+
+  celery:
+    build:
+      context: .
+      dockerfile: compose/celery/Dockerfile
+    restart: always
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    depends_on:
+        - db
+        - rabbit
+        - redis
 
   redis:
     image: redis:latest

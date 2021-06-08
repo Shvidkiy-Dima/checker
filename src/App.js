@@ -57,9 +57,9 @@ function App() {
   return (
     <Router history={customHistory}>
       <Switch>
-        {/* <Route exact path="/registration">
+        <Route exact path="/registration">
           <RegForm auth={isAutheticated} />
-        </Route> */}
+        </Route>
 
         <Route exact path="/login">
           <LoginForm auth={isAutheticated} login={login} />

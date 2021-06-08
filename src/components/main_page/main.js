@@ -18,11 +18,11 @@ export default function Main({ auth }) {
           <Layout.Header>
             <img className="logo" src="/public/logo.png" />
             <Menu theme="dark" mode="horizontal">
-              {/* <Menu.Item key="1">
+              <Menu.Item key="1">
                 <Link to="/registration" style={{ fontSize: "1.4em" }}>
                   Registration
                 </Link>
-              </Menu.Item> */}
+              </Menu.Item>
               <Menu.Item key="2">
                 <Link to="/login" style={{ fontSize: "1.4em" }}>
                   Login

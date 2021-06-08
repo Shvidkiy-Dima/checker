@@ -72,6 +72,12 @@ class BaseWorker(ABC):
         logger.info(f'Start processing monitor {monitor.url} for user {monitor.user.email}')
         start = time.monotonic()
         error, response, body = await self.handle_request(session, monitor.url)
+
+        if not error:
+            logger.info(f'Request to {monitor.url} status {response.status}')
+        else:
+            logger.info(f'Request to {monitor.url} error {response}')
+
         response_time = time.monotonic() - start
 
         if not error:
@@ -105,7 +111,10 @@ class BaseWorker(ABC):
         return log
 
     async def get_rmq_conn(self):
-        return await connect_robust(host=settings.MQ_HOST, port=settings.MQ_PORT)
+        return await connect_robust(host=settings.MQ_HOST,
+                                    port=settings.MQ_PORT,
+                                    login=settings.MQ_USER,
+                                    password=settings.MQ_PASS)
 
 
     def get_redis_conn(self):
@@ -119,11 +128,9 @@ class BaseWorker(ABC):
         timeout = ClientTimeout(total=timeout)
         try:
             async with session.request(method, url, timeout=timeout) as response:
-                logger.info(f'Request to {url} status {response.status}')
                 return False, response, await response.read()
 
         except Exception as e:
-            logger.info(f'Request to {url} error {e}')
             return True, str(e), b''
 
     async def send_error_msg(self, monitor, rmq_channel, error_msg):

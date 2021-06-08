@@ -6,36 +6,66 @@ import { Form, Input, Button, Checkbox, Row, Col, Card, Alert } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import "./login.css";
 
-export default function LoginForm({ auth, login }) {
-  let [error, setError] = React.useState("");
+export default function LoginForm({ auth}) {
+  const [error, setError] = React.useState([]);
+  const [Sended, SetSended] = React.useState(false)
+
 
   function DoReg(value) {
-    setError("");
-    let password = value.password;
-    let password2 = value.password2;
-    if (password !== password2) {
-      setError("Passwords mistmach");
+    console.log(value)
+    let { password, password2, email } = value;   
+    console.log(password != password2)
+    if (password != password2) {
+      setError(["Passwords mistmach!"]);
+      return
     }
-    // setError("");
-    // request(
-    //   {
-    //     method: "post",
-    //     url: "api/auth/sign-in/",
-    //     data: { email: email_input.value, password: pass_input.value },
-    //   },
-    //   (res) => {
-    //     localStorage.setItem("token", res.data.token);
-    //     login(true);
-    //   },
-    //   (err) => {
-    //     setError(err.response ? err.response.data.detail : err.message);
-    //   }
-    // );
+    request(
+      {
+        method: "post",
+        url: "api/auth/sign-up/",
+        data: { email: email, password: password },
+      },
+      (res) => {
+          SetSended(true)
+      },
+      (err) => {
+        console.log(err.response)
+        let errors = []
+        if (err.response) {
+          setError(err.response.data.non_field_errors ? err.response.data.non_field_errors :  Object.values(err.response.data));          
+        }
+        else{
+          setError([err.message])
+        }
+      }
+    );
   }
 
 
   if (auth === true){
     return <Redirect to="/dashboard" />
+  }
+
+
+  if (Sended === true){
+
+    return (
+      <div style={{ height: "100%"}}>
+      <Row justify="center" align="center">
+        <Col>
+          <Card
+            title=" "
+            bordered={false}
+            style={{marginTop: "40%" }}
+          >
+            <h1>We send confirmation email. Please check your mail</h1>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+
+    )
+
   }
 
   return (
@@ -108,7 +138,7 @@ export default function LoginForm({ auth, login }) {
                     <Link to="/login">Already have account?</Link>
                   </Form.Item>
 
-                  {error ? <Alert message={error} type="error" /> : ""}
+                  {error.map((e, i)=><Alert message={e} type="error" key={i} />)}
                 </Form>
               </Card>
             </Col>

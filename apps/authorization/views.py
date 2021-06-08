@@ -5,10 +5,12 @@ from rest_framework import permissions
 from authorization.models import ConfirmationEmail
 from authorization.services.base import confirm
 from authorization import serializers
+from authorization.throttling import EmailDelayThrottle
 
 
 class SignUpView(generics.CreateAPIView):
     serializer_class = serializers.SignUpSerializer
+    throttle_classes = (EmailDelayThrottle,)
 
 
 class SignUpConfirmView(generics.RetrieveAPIView):

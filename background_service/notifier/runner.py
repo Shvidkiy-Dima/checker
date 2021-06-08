@@ -35,7 +35,9 @@ class Dispatcher:
 
     async def check_queue(self):
         connection = await connect_robust(host=settings.MQ_HOST,
-                                          port=settings.MQ_PORT)
+                                          port=settings.MQ_PORT,
+                                          login=settings.MQ_USER,
+                                          password=settings.MQ_PASS)
 
         # Creating a channel
         channel = await connection.channel()
