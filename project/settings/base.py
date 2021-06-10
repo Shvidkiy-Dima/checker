@@ -37,7 +37,7 @@ ALLOWED_HOSTS = ['*']
 
 API_HOST = 'http://localhost'
 SITE_HOST = 'http://localhost'
-LOGIN_PAGE = SITE_HOST + '/#/login/'
+LOGIN_PAGE = SITE_HOST + '/dashboard/login/'
 
 # Application definition
 

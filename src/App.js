@@ -27,10 +27,18 @@ function App() {
   }
 
   function logout() {
-    localStorage.removeItem("token")
-    setisAutheticated(false);
-    setUser(null)
-    ws.close()
+    request(
+      { method: "delete", url: "api/auth/logout/" },
+      (res) => {
+        localStorage.removeItem("token")
+        setisAutheticated(false);
+        setUser(null)
+        ws.close()
+      },
+      (err) => {
+        console.log(err)
+      }
+    )
   }
 
   function getUser() {

@@ -164,7 +164,7 @@ export default function DashBoard({ ws, logout, user, setUser}) {
               style={{ padding: 0, display: 'flex', justifyContent: 'space-between'}}
               
             >
-              <img style={{marginLeft: '10%'}} GclassName="logo" src="/assets/logo_black.png" />
+              <img style={{marginLeft: '10%'}} GclassName="logo" src="/assets/img/logo_black.png" />
               <h2 style={{marginRight: '5%'}}>{user.email}</h2>
             </Layout.Header>
             <Monitors ws={ws} logout={logout} user={user} />

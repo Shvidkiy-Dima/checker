@@ -135,7 +135,7 @@ export default function LoginForm({ auth}) {
                     >
                       Registration
                     </Button>
-                    <Link to="/login">Already have account?</Link>
+                    <Link to="/dashboard/login">Already have account?</Link>
                   </Form.Item>
 
                   {error.map((e, i)=><Alert message={e} type="error" key={i} />)}

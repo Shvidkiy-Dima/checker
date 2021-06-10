@@ -2,8 +2,10 @@ from django.shortcuts import redirect
 from django.conf import settings
 from rest_framework import generics
 from rest_framework import permissions
+from rest_framework import status
+from rest_framework.response import Response
 from authorization.models import ConfirmationEmail
-from authorization.services.base import confirm
+from authorization.services.base import confirm, logout
 from authorization import serializers
 from authorization.throttling import EmailDelayThrottle
 
@@ -25,3 +27,11 @@ class SignUpConfirmView(generics.RetrieveAPIView):
 
 class SignInView(generics.CreateAPIView):
     serializer_class = serializers.SingInSerializer
+
+
+class LogoutView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def delete(self, request):
+        logout(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)

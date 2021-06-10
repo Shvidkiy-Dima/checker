@@ -1,3 +1,7 @@
 from django.contrib import admin
+from authorization.models import ConfirmationEmail
 
-# Register your models here.
+
+@admin.register(ConfirmationEmail)
+class ConfirmationEmailAdmin(admin.ModelAdmin):
+    pass

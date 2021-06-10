@@ -45,26 +45,26 @@ class CreateMonitorSerializer(ListMonitorSerializer):
             raise serializers.ValidationError(f'Min interval for free account {mc.free_log_min_interval}')
         return value
 
-    def validate_keyword(self, value):
-        try:
-            value.encode()
-        except Exception as e:
-            raise serializers.ValidationError(e)
-
-        return value
+    # def validate_keyword(self, value):
+    #     try:
+    #         value.encode()
+    #     except Exception as e:
+    #         raise serializers.ValidationError(e)
+    #
+    #     return value
 
     def validate(self, attrs):
 
         if not self.async_validated:
-            raise serializers.ValidationError('You must call async_validate first')
+            raise RuntimeError('You must call async_validate first')
 
         user = self.context.get('request').user
 
         if not attrs.get('by_telegram', False):
-            raise serializers.ValidationError('You must set at least one notify option')
+            raise serializers.ValidationError('You must set at least one notification option')
 
-        if attrs['monitor_type'] == Monitor.MonitorType.HTML and not attrs.get('keyword'):
-            raise serializers.ValidationError('You must set keyword if use type HTML')
+        # if attrs['monitor_type'] == Monitor.MonitorType.HTML and not attrs.get('keyword'):
+        #     raise serializers.ValidationError('You must set keyword if use type HTML')
 
         m_amount = user.monitors.count()+1
         config = MonitorConfig.get_solo()
@@ -72,8 +72,8 @@ class CreateMonitorSerializer(ListMonitorSerializer):
         if user.profile.type == ClientProfile.PlanType.FREE and m_amount > config.free_max_monitors:
             raise serializers.ValidationError('Max amount monitors for free plan')
 
-        elif user.profile.type == ClientProfile.PlanType.PRO and m_amount > config.pro_max_monitors:
-            raise serializers.ValidationError('Max amount monitors for pro plan')
+        # elif user.profile.type == ClientProfile.PlanType.PRO and m_amount > config.pro_max_monitors:
+        #     raise serializers.ValidationError('Max amount monitors for pro plan')
 
         attrs['user'] = user
         attrs['next_request'] = self.async_validated_data['next_request']

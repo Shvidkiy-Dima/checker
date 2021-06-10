@@ -13,6 +13,8 @@ const { Header, Sider, Content } = Layout;
 export default function DashBoard({ ws, logout, user }) {
   const [Monitors, SetMonitors] = React.useState(null);
   const [show, setShow] = React.useState(false);
+  const MAX_MONITORS = 10
+
 
   const handleShow = () => setShow(true);
 
@@ -72,7 +74,7 @@ export default function DashBoard({ ws, logout, user }) {
       <div style={{ textAlign: "center", marginBottom: "2%" }}>
         <Button size="large" type="primary" onClick={handleShow} danger>
           <PlusOutlined />
-          New monitor
+          New monitor {Object.keys(Monitors).length}/{MAX_MONITORS}
         </Button>
       </div>
       {Object.entries(Monitors).map(([key, value]) => (
