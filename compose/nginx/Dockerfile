@@ -32,7 +32,8 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /react-ui/build /srv/static
 
 COPY --from=django /app/media/static /srv/static/static
-COPY ./public/img /srv/static/public
+COPY ./public/assets /srv/static/assets
+COPY ./public/landing.html /srv/static/
 
 EXPOSE 80
 

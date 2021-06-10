@@ -16,7 +16,7 @@ export default function Main({ auth }) {
   return (
         <Layout style={{height: '100%'}} className="layout">
           <Layout.Header>
-            <img className="logo" src="/public/logo.png" />
+            <img className="logo" src="/assets/logo.png" />
             <Menu theme="dark" mode="horizontal">
               <Menu.Item key="1">
                 <Link to="/registration" style={{ fontSize: "1.4em" }}>

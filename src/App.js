@@ -9,7 +9,7 @@ import ws from './utils/ws'
 import './App.css'
 import { createBrowserHistory } from "history";
 import {
-  HashRouter as Router,
+  BrowserRouter as Router,
   Switch,
   Route,
 } from "react-router-dom";
@@ -57,11 +57,11 @@ function App() {
   return (
     <Router history={customHistory}>
       <Switch>
-        <Route exact path="/registration">
+        <Route exact path="/dashboard/registration">
           <RegForm auth={isAutheticated} />
         </Route>
 
-        <Route exact path="/login">
+        <Route exact path="/dashboard/login">
           <LoginForm auth={isAutheticated} login={login} />
         </Route>
 
@@ -69,9 +69,9 @@ function App() {
           <DashBoard user={User} logout={logout} ws={ws} setUser={setUser}/>
         </ProtectedRoute>
         
-        <Route exact path="/">
-          <MainPage auth={isAutheticated} />
-        </Route>
+{/* //        <Route exact path="/">
+//          <MainPage auth={isAutheticated} />
+//        </Route> */}
       </Switch>
     </Router>
 
