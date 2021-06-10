@@ -18,7 +18,7 @@ services:
       - ./.envs/.prod/.django
       - ./.envs/.prod/.postgres
     volumes:
-      - ./django_logs:/app/logs
+      - ./docker_logs/django_logs:/app/logs
       - ./media:/app/media
 
   nginx:
@@ -47,7 +47,7 @@ services:
       - ./.envs/.prod/.django
       - ./.envs/.prod/.postgres
     volumes:
-      - ./fetcher_logs:/app/background_service/fetcher/logs
+      - ./docker_logs/fetcher_logs:/app/background_service/fetcher/logs
 
   notifier:
     build:
@@ -64,7 +64,7 @@ services:
       - ./.envs/.prod/.django
       - ./.envs/.prod/.postgres
     volumes:
-      - ./notifier_logs:/app/background_service/notifier/logs
+      - ./docker_logs/notifier_logs:/app/background_service/notifier/logs
 
   rabbit:
     hostname: rabbit
@@ -87,6 +87,8 @@ services:
         - db
         - rabbit
         - redis
+    volumes:
+      - ./docker_logs/celery_logs:/app/logs
 
   redis:
     image: redis:latest

@@ -86,10 +86,7 @@ celerybeat-schedule
 venv/
 ENV/
 
-notifier_logs
-fetcher_logs
-postgres-data
-django_logs
+docker_logs
 
 # Spyder project settings
 .spyderproject

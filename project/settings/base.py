@@ -163,7 +163,7 @@ DEFAULT_FROM_EMAIL = 'checkitout.service@mail.ru'
 EMAIL_USE_SSL = True
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_HOST_USER = 'checkitout.service@mail.ru'
-EMAIL_HOST_PASSWORD = '19960213Za' #os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 465
 
 
@@ -248,10 +248,14 @@ LOGGING = {
         'django': {
             'handlers': ['console'],
         },
-    'django.request': {
-        'handlers': ['log_file'],
-        'level': 'INFO',
-        'propagate': False,
+        'django.request': {
+            'handlers': ['log_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
-    },
+    'root':
+        {'level': 'INFO',
+         'handlers': ['log_file']
+         },
 }

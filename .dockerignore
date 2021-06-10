@@ -14,3 +14,4 @@ django_logs
 build
 node_modules
 media
+docker_logs
