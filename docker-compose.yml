@@ -26,6 +26,7 @@ services:
       context: .
       dockerfile: compose/nginx/Dockerfile
     image: checkitout_nginx
+    restart: always
     ports:
       - "80:80"
     depends_on:
@@ -68,6 +69,7 @@ services:
   rabbit:
     hostname: rabbit
     image: rabbitmq:3.8.16-management
+    restart: always
     ports:
       - "15672:15672"
     env_file:
@@ -88,6 +90,7 @@ services:
 
   redis:
     image: redis:latest
+    restart: always
 
   db:
     hostname: db
