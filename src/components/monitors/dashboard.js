@@ -1,5 +1,5 @@
 import React from "react";
-import { Col, Layout, Menu,  notification, Row} from "antd";
+import { Col, Layout, Menu,  notification, Row, Spin} from "antd";
 import {
   NodeExpandOutlined,
   LineChartOutlined,
@@ -24,36 +24,36 @@ const { Header, Sider, Content } = Layout;
 
 export default function DashBoard({ ws, logout, user, setUser}) {
 
-  React.useEffect(()=>{
+  // React.useEffect(()=>{
 
-    if (!user.has_telegram){
-      return
-    }
+  //   if (!user.has_telegram){
+  //     return
+  //   }
 
-      request({url: 'api/account/alert/', method: 'get'}, 
-      (res)=>{
-        let alerts = res.data.slice(0, 10)
-        console.log(alerts)
-        alerts.forEach(alert => {
-          notification.info(
-            {message: `Notification`,
-            description: alert.msg,
-            placement: 'topRight',
-            onClose: ()=>{
-              request({url: `api/account/alert/${alert.id}/`, method: 'patch'},
-                (res)=>{},
-                (err)=>{}
-              )
-            }
-          });
-        });
+  //     request({url: 'api/account/alert/', method: 'get'}, 
+  //     (res)=>{
+  //       let alerts = res.data.slice(0, 10)
+  //       console.log(alerts)
+  //       alerts.forEach(alert => {
+  //         notification.info(
+  //           {message: `Notification`,
+  //           description: alert.msg,
+  //           placement: 'topRight',
+  //           onClose: ()=>{
+  //             request({url: `api/account/alert/${alert.id}/`, method: 'patch'},
+  //               (res)=>{},
+  //               (err)=>{}
+  //             )
+  //           }
+  //         });
+  //       });
 
-      },
-      (err)=>{
+  //     },
+  //     (err)=>{
 
-      })
-  }, 
-  [])
+  //     })
+  // }, 
+  // [])
 
 
   React.useEffect(()=>{

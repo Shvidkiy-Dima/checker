@@ -13,7 +13,7 @@ class MonitorView(SerializerMapMixin, AsyncApiView, generics.ListAPIView):
                       'post': serializers.CreateMonitorSerializer}
 
     def get_queryset(self):
-        return Monitor.objects.by_user(self.request.user)
+        return Monitor.objects.by_user(self.request.user).prefetch()
 
     async def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -30,8 +30,8 @@ class MonitorView(SerializerMapMixin, AsyncApiView, generics.ListAPIView):
 
 class MonitorDetailView(SerializerMapMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_map = {'get': serializers.ListMonitorSerializer,
+    serializer_map = {'get': serializers.DetailMonitorSerializer,
                       'patch': serializers.UpdateMonitorSerializer}
 
     def get_queryset(self):
-        return Monitor.objects.by_user(self.request.user)
+        return Monitor.objects.by_user(self.request.user).prefetch()

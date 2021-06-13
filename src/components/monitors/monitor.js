@@ -42,7 +42,7 @@ export default function Monitor({ monitor, delete_monitor}) {
     );
   }
 
-  let logs_data = React.useMemo(()=>convert_for_bar(monitor.last_requests, monitor.interval), [monitor.log.created])
+  let logs_data = React.useMemo(()=>convert_for_bar(monitor.log_groups, monitor.interval), [monitor.log.created])
 
   return (
     <Card style={{ width: "100%" }}>

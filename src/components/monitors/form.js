@@ -6,6 +6,7 @@ import request from "../../utils/request";
 export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user }) {
   const [MonitorType, setMonitorType] = React.useState(null);
   const [interval, setInterval] = React.useState(5);
+  const [MaxTimeout, setMaxTimeout] = React.useState(10);
   const [Errorinterval, setErrorInterval] = React.useState(5);
   const [url, setUrl] = React.useState("");
   const [name, setName] = React.useState("");
@@ -26,6 +27,7 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
       monitor_type: MonitorType,
       interval: interval * 60,
       error_notification_interval: Errorinterval * 60,
+      max_timeout: MaxTimeout,
       by_telegram: EnabledTelegram,
       name,
       url,
@@ -85,6 +87,14 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
           <Form.Item name="size">
             <Slider min={1} max={60} defaultValue={interval} onChange={(e)=>{setInterval(e)}} disabled={false} />
           </Form.Item>
+
+          <Popover placement="topLeft" content={'Max timeout per request'}>
+          Max timeout
+          </Popover>
+          <Form.Item name="size">
+            <Slider min={1} max={30} defaultValue={MaxTimeout} onChange={(e)=>{setMaxTimeout(e)}} disabled={false} />
+          </Form.Item>
+
           <Form.Item name="size">
             <div style={{display: 'flex'}}>
             <p style={{marginRight: '5%'}}>TELEGRAM </p>

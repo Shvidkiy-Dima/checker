@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Menu, Button, Modal, Slider, Form, Input } from "antd";
+import { Layout, Menu, Button, Modal, Slider, Form, Input, Spin} from "antd";
 import {
   PlusOutlined,
 } from "@ant-design/icons";
@@ -12,6 +12,7 @@ const { Header, Sider, Content } = Layout;
 
 export default function DashBoard({ ws, logout, user }) {
   const [Monitors, SetMonitors] = React.useState(null);
+  const [Load, ShowLoad] = React.useState(true);
   const [show, setShow] = React.useState(false);
   const MAX_MONITORS = 10
 
@@ -22,6 +23,7 @@ export default function DashBoard({ ws, logout, user }) {
     request({ method: "get", url: "api/monitor/" }, (res) => {
       let data = {};
       res.data.forEach((monitor) => (data[monitor.id] = monitor));
+      ShowLoad(false)
       SetMonitors(data);
     });
   }
@@ -52,7 +54,7 @@ export default function DashBoard({ ws, logout, user }) {
   React.useEffect(GetMonirots, []);
 
   if (Monitors === null){
-    return null
+    return   <Spin size="large" style={{marginTop: '10%'}}/>
   }
 
   return (
@@ -77,6 +79,9 @@ export default function DashBoard({ ws, logout, user }) {
           New monitor {Object.keys(Monitors).length}/{MAX_MONITORS}
         </Button>
       </div>
+
+
+
       {Object.entries(Monitors).map(([key, value]) => (
         <Monitor delete_monitor={DeleteMonitor} key={key} monitor={value} />
       ))}

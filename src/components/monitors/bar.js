@@ -6,7 +6,8 @@ import Moment_f from 'moment'
 
 
 export default function MultiColorProgressBar({ readings, monitor }) {
-  const [Value, SetValue] = React.useState("");
+  const [Start, SetStart] = React.useState("");
+  const [End, SetEnd] = React.useState("");
   const [ResCode, setResCode] = React.useState("");
   const [ResError, setResErro] = React.useState(null);
 
@@ -17,7 +18,8 @@ export default function MultiColorProgressBar({ readings, monitor }) {
           return (
             <div
               onMouseEnter={() => {
-                SetValue(item["created"]);
+                SetStart(item["start"]);
+                SetEnd(item['end'])
                 setResCode(item["res_code"]);
                 setResErro(item["error"]);
               }}
@@ -48,9 +50,10 @@ export default function MultiColorProgressBar({ readings, monitor }) {
       <Tooltip
         title={
           <div>
-            {Moment_f.utc(Value).local().format("MM/DD/HH:mm:ss")}
-            <p>{ResCode}</p>
-            <p>{ResError}</p>
+            <p>Start: {Moment_f.utc(Start).local().format("MM/DD/HH:mm:ss")}</p>
+            <p>End: {End ? Moment_f.utc(End).local().format("MM/DD/HH:mm:ss"): ''}</p>
+            <p>Response code: {ResCode}</p>
+            <p>Error: {ResError}</p>
           </div>
         }
       >

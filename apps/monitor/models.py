@@ -23,6 +23,9 @@ class MonitorQuerySet(models.QuerySet):
     def active(self):
         return self.filter(is_active=True)
 
+    def prefetch(self):
+        return self.prefetch_related('logs')
+
 
 class Monitor(BaseModel):
 
@@ -39,6 +42,9 @@ class Monitor(BaseModel):
     next_request = models.DateTimeField()
     interval = models.DurationField(validators=[MinValueValidator(timedelta(minutes=1)),
                                                 MaxValueValidator(timedelta(minutes=60))])
+    max_timeout = models.DurationField(validators=[MinValueValidator(timedelta(seconds=1)),
+                                                   MaxValueValidator(timedelta(seconds=30))],
+                                       default=timedelta(seconds=10))
     url = models.URLField()
     name = models.CharField(max_length=124)
     description = models.TextField(null=True, blank=True, default=None)
@@ -72,6 +78,41 @@ class Monitor(BaseModel):
     def last_logs_for_hours(self, hours=24):
         delta = timezone.now() - timedelta(hours=hours)
         return self.logs.filter(created__gt=delta).order_by('created')
+
+    def get_groups(self, hours=24):
+        data = self.last_logs_for_hours(hours)
+        groups = []
+        
+        for i in data.iterator():
+            if not groups:
+                groups.append({'start': i.created,
+                               'successful': i.is_successful,
+                               'count': 1,
+                               'error': i.error,
+                               'res_code': i.response_code})
+
+            last = groups[-1]
+            if last['successful'] != i.is_successful:
+                last['end'] = i.created
+                groups.append({'start': i.created,
+                               'successful': i.is_successful,
+                               'count': 1,
+                               'error': i.error,
+                               'res_code': i.response_code})
+
+            elif (not last['successful']) and (not i.is_successful) and \
+                    i.error != last['error'] or i.response_code != last['res_code']:
+                    last['end'] = i.created
+                    groups.append({'start': i.created,
+                                   'successful': i.is_successful,
+                                   'count': 1,
+                                   'error': i.error,
+                                   'res_code': i.response_code})
+
+            else:
+                last['count'] += 1
+
+        return groups
 
     @property
     def interval_in_minutes(self):

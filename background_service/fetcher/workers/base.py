@@ -7,7 +7,7 @@ import logging
 from datetime import timedelta, datetime
 from abc import ABC, abstractmethod
 from channels.layers import get_channel_layer
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout, http_exceptions
 from monitor.models import Monitor, MonitorLog
 from monitor.serializers import MonitorLogSerializer
 from rest_framework import status
@@ -70,15 +70,13 @@ class BaseWorker(ABC):
 
     async def fetch(self, monitor, session, rmq_channel):
         logger.info(f'Start processing monitor {monitor.url} for user {monitor.user.email}')
-        start = time.monotonic()
-        error, response, body = await self.handle_request(session, monitor.url)
+        error, response, body, response_time\
+            = await self.handle_request(session, monitor.url)
 
         if not error:
             logger.info(f'Request to {monitor.url} status {response.status}')
         else:
             logger.info(f'Request to {monitor.url} error {response}')
-
-        response_time = time.monotonic() - start
 
         if not error:
             data = await self.handle_response(response, monitor, response_time, body)
@@ -124,14 +122,20 @@ class BaseWorker(ABC):
         layer = get_channel_layer()
         await layer.group_send(str(monitor.user), {'type': 'send_log', 'data': data})
 
-    async def handle_request(self, session: ClientSession, url, timeout=5, method='get'):
+    async def handle_request(self, session: ClientSession, url, timeout=1, method='get'):
         timeout = ClientTimeout(total=timeout)
+        start = time.monotonic()
         try:
             async with session.request(method, url, timeout=timeout) as response:
-                return False, response, await response.read()
+                body = await response.read()
+                error, response, body = False, response, body
 
         except Exception as e:
-            return True, str(e), b''
+            error, response, body = True, self._convert_request_exception(e), b''
+
+        response_time = time.monotonic() - start
+
+        return error, response, body, response_time
 
     async def send_error_msg(self, monitor, rmq_channel, error_msg):
         error_interval = monitor.error_notification_interval
@@ -156,3 +160,9 @@ class BaseWorker(ABC):
     @database_sync_to_async
     def fetch_monitors(self, ids):
         return list(Monitor.objects.filter(id__in=ids).active().select_related('user', 'user__userconfig'))
+
+    def _convert_request_exception(self, exc):
+        if type(exc) == asyncio.exceptions.TimeoutError:
+            return 'Timeout error'
+
+        return f'{type(exc)}: {exc}'
