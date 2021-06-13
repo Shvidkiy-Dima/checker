@@ -71,7 +71,7 @@ class BaseWorker(ABC):
     async def fetch(self, monitor, session, rmq_channel):
         logger.info(f'Start processing monitor {monitor.url} for user {monitor.user.email}')
         error, response, body, response_time\
-            = await self.handle_request(session, monitor.url, timeout=monitor.max_timeout)
+            = await self.handle_request(session, monitor.url, timeout=monitor.max_timeout.seconds)
 
         if not error:
             logger.info(f'Request to {monitor.url} status {response.status}')
