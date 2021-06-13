@@ -71,7 +71,7 @@ class BaseWorker(ABC):
     async def fetch(self, monitor, session, rmq_channel):
         logger.info(f'Start processing monitor {monitor.url} for user {monitor.user.email}')
         error, response, body, response_time\
-            = await self.handle_request(session, monitor.url)
+            = await self.handle_request(session, monitor.url, timeout=monitor.max_timeout)
 
         if not error:
             logger.info(f'Request to {monitor.url} status {response.status}')
@@ -122,7 +122,7 @@ class BaseWorker(ABC):
         layer = get_channel_layer()
         await layer.group_send(str(monitor.user), {'type': 'send_log', 'data': data})
 
-    async def handle_request(self, session: ClientSession, url, timeout=1, method='get'):
+    async def handle_request(self, session: ClientSession, url, timeout, method='get'):
         timeout = ClientTimeout(total=timeout)
         start = time.monotonic()
         try:

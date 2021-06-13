@@ -94,13 +94,15 @@ class CreateMonitorSerializer(ListMonitorSerializer):
         monitor_type = self.initial_data.get('monitor_type', None)
         url = self.initial_data.get('url', None)
         interval = self.initial_data.get('interval', None)
+        max_timeout = self.initial_data.get('max_timeout', None)
 
         method = self.initial_data.get('method', 'get')
-        if list(filter(lambda e: e is None, [monitor_type, url, interval])):
+        if list(filter(lambda e: e is None, [monitor_type, url, interval, max_timeout])):
             raise serializers.ValidationError('You must set all values')
 
         self.worker = HttpWorker()
-        self.async_validated_data = await monitor_first_request(self.worker,  url, method, interval)
+        self.async_validated_data = \
+            await monitor_first_request(self.worker,  url, method, interval, max_timeout)
         self.async_validated = True
 
     def create(self, validated_data):

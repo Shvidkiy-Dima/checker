@@ -4,12 +4,12 @@ from django.utils import timezone
 
 
 
-async def monitor_first_request(worker, url, method, interval):
+async def monitor_first_request(worker, url, method, interval, max_timeout):
     attrs = {}
     async with worker.get_client_session() as session:
 
         is_error, response, body, response_time \
-            = await worker.handle_request(session, url, method=method)
+            = await worker.handle_request(session, url, method=method, timeout=max_timeout)
 
         attrs['last_request'] = timezone.now()
         attrs['next_request'] = timezone.now() + timedelta(seconds=interval)
