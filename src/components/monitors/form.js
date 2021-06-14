@@ -91,7 +91,7 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
           <Popover placement="topLeft" content={'Max timeout per request'}>
           Max timeout
           </Popover>
-          <Form.Item name="size">
+          <Form.Item name="timeout">
             <Slider min={1} max={30} defaultValue={MaxTimeout} onChange={(e)=>{setMaxTimeout(e)}} disabled={false} />
           </Form.Item>
 

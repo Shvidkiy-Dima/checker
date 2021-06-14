@@ -16,22 +16,21 @@ class MonitorNestedLogSerializer(serializers.ModelSerializer):
 
 class ListMonitorSerializer(serializers.ModelSerializer):
     log = MonitorNestedLogSerializer(source='last_log', read_only=True)
-    request_count = serializers.IntegerField(source='logs.count', read_only=True)
     log_groups = serializers.JSONField(source='get_groups', read_only=True)
 
     class Meta:
         model = Monitor
         fields = ('id', 'monitor_type', 'interval_in_minutes', 'url', 'name', 'description', 'is_active', 'keyword', 'log',
                   'log_groups', 'interval', 'next_request', 'successful_percent', 'unsuccessful_percent',
-                  'request_count', 'last_request_in_seconds','created', 'error_notification_interval',
-                  'error_notification_interval_in_minutes', 'unsuccessful_percent', 'by_telegram', 'max_timeout')
+                'last_request_in_seconds','created', 'error_notification_interval',
+                  'error_notification_interval_in_minutes','by_telegram', 'max_timeout')
 
         read_only_fields = ('is_active', 'next_request', 'log', 'error_notification_interval_in_minutes',
                             'successful_percent', 'last_request_in_seconds')
 
 
 class DetailMonitorSerializer(ListMonitorSerializer):
-    last_requests = MonitorNestedLogSerializer(source='last_logs_for_hours', many=True)
+    last_requests = MonitorNestedLogSerializer(source='last_logs_for_day', many=True)
 
     class Meta(ListMonitorSerializer.Meta):
         fields = ListMonitorSerializer.Meta.fields + ('last_requests',)

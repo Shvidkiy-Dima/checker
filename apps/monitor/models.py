@@ -23,8 +23,12 @@ class MonitorQuerySet(models.QuerySet):
     def active(self):
         return self.filter(is_active=True)
 
-    def prefetch(self):
-        return self.prefetch_related('logs')
+    def prefetch_for_day(self):
+        hours = 24
+        return self.prefetch_related(
+            models.Prefetch('logs',
+                            queryset=MonitorLog.objects.for_hours(hours).order_by('created'),
+                            to_attr='last_logs'))
 
 
 class Monitor(BaseModel):
@@ -75,15 +79,19 @@ class Monitor(BaseModel):
     def last_log(self):
         return self.logs.order_by('created').last()
 
-    def last_logs_for_hours(self, hours=24):
+    def last_logs_for_day(self):
+        hours = 24
+        if hasattr(self, 'last_logs'):
+            return self.last_logs
+
         delta = timezone.now() - timedelta(hours=hours)
         return self.logs.filter(created__gt=delta).order_by('created')
 
-    def get_groups(self, hours=24):
-        data = self.last_logs_for_hours(hours)
+    def get_groups(self):
+        data = self.last_logs_for_day()
         groups = []
         
-        for i in data.iterator():
+        for i in data:
             if not groups:
                 groups.append({'start': i.created,
                                'successful': i.is_successful,
@@ -118,18 +126,23 @@ class Monitor(BaseModel):
     def interval_in_minutes(self):
         return int(self.interval.total_seconds() // 60)
 
-    def successful_percent(self, hours=24):
-        logs = self.last_logs_for_hours(hours)
-        if not logs:
-            return None
+    def successful_percent(self):
+        logs = self.last_logs_for_day()
+        count = 0
 
-        return logs.filter(response_code__gte=100,
-                                response_code__lt=400,
-                                error__isnull=True).count() * 100 // logs.count()
+        if isinstance(logs, list):
+            count = len(list(filter(lambda l: l.is_successful, logs)))
+
+        elif logs is not None:
+            count = logs.filter(response_code__gte=100,
+                                    response_code__lt=400,
+                                    error__isnull=True).count() * 100 // logs.count()
+
+        return count * 100 // len(logs) if count != 0 else count
 
     @property
-    def unsuccessful_percent(self, hours=24):
-        successful_percent = self.successful_percent(hours)
+    def unsuccessful_percent(self):
+        successful_percent = self.successful_percent()
         if successful_percent is None:
             return None
 
@@ -155,6 +168,13 @@ class MonitorLogManager(models.Manager):
         return self.create(monitor=monitor, **kwargs)
 
 
+class MonitorLogQuerySet(models.QuerySet):
+
+    def for_hours(self, hours=24):
+        delta = timezone.now() - timedelta(hours=hours)
+        return self.filter(created__gt=delta)
+
+
 class MonitorLog(BaseModel):
     error = models.TextField(null=True, blank=True, default=None)
     monitor = models.ForeignKey(Monitor, on_delete=models.CASCADE, related_name='logs')
@@ -162,7 +182,7 @@ class MonitorLog(BaseModel):
     response_time = models.FloatField()
     keyword = models.BooleanField(null=True, blank=True, default=None)
 
-    objects = MonitorLogManager()
+    objects = MonitorLogManager.from_queryset(MonitorLogQuerySet)()
 
     class Meta:
         ordering = ('-created',)

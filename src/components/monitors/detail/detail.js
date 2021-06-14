@@ -55,7 +55,7 @@ export default function DetailMonitor() {
           }
         })
 
-        SetDataSource(error_logs)
+        SetDataSource(error_logs.reverse())
 
         setConfig({
           data,
@@ -148,6 +148,9 @@ export default function DetailMonitor() {
                 </List.Item>
                 <List.Item>
                   <Card title='Notifications' bordered={false}>Telegram</Card>
+                </List.Item>
+                <List.Item>
+                  <Card title='Timeout' bordered={false}>{monitor.max_timeout}</Card>
                 </List.Item>
               </List>
             </Row>
