@@ -54,6 +54,7 @@ class Monitor(BaseModel):
     description = models.TextField(null=True, blank=True, default=None)
     is_active = models.BooleanField(default=True)
     by_telegram = models.BooleanField(null=True, blank=True, default=None)
+    by_email = models.BooleanField(default=False)
     error_notification_interval = models.DurationField(default=timedelta(minutes=5),
                                                        validators=[MinValueValidator(timedelta(minutes=5)),
                                                                    MaxValueValidator(timedelta(minutes=60))])
@@ -136,7 +137,7 @@ class Monitor(BaseModel):
         elif logs is not None:
             count = logs.filter(response_code__gte=100,
                                     response_code__lt=400,
-                                    error__isnull=True).count() * 100 // logs.count()
+                                    error__isnull=True).count()
 
         return count * 100 // len(logs) if count != 0 else count
 

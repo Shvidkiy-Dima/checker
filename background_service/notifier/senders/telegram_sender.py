@@ -67,7 +67,7 @@ class TelegramSender:
     async def send_message(self, msg, chat_id, user_id):
         try:
             await self.bot.send_message(chat_id, msg)
-            logger.info(f"Message was sent to {user_id}")
+            logger.info(f"TELEGRAM: Message was sent to {user_id}")
         except Exception as e:
             await self._handle_send_message_error(e, user_id)
 

@@ -7,6 +7,7 @@ import axios from 'axios'
 
 axios.defaults.baseURL = 'http://194.163.142.64/';
 //axios.defaults.baseURL = 'http://localhost:8000/';
+//axios.defaults.baseURL = 'http://localhost/';
 
 ReactDOM.render(
   <React.StrictMode>

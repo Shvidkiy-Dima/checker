@@ -12,6 +12,7 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
   const [name, setName] = React.useState("");
   const [confirmLoading, setConfirmLoading] = React.useState(false);
 
+  const [EnabledEmail, SetEnabledEmail] = React.useState(false)
   const [EnabledTelegram, SetEnabledTelegram] = React.useState(user.has_telegram);
 
 
@@ -29,6 +30,7 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
       error_notification_interval: Errorinterval * 60,
       max_timeout: MaxTimeout,
       by_telegram: EnabledTelegram,
+      by_email: EnabledEmail,
       name,
       url,
     };
@@ -107,6 +109,12 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
               <Alert message="You must enable telegram on settings page" banner />
             </>
             }
+            </div>
+          </Form.Item>
+          <Form.Item name="size">
+          <div style={{display: 'flex'}}>
+            <p style={{marginRight: '5%'}}>EMAIL </p>
+            <Switch checked={EnabledEmail} onChange={()=>{SetEnabledEmail(!EnabledEmail)}} />
             </div>
           </Form.Item>
           <Form.Item name="size">

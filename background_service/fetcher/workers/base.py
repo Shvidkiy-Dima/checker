@@ -148,12 +148,17 @@ class BaseWorker(ABC):
 
         logger.info(f'Send error notification to {monitor.user.email}')
         await self.cache.set(cache_key, time.time())
-        data = {'url': monitor.url, 'name': monitor.name,
+
+        data = {'url': monitor.url,
+                'name': monitor.name,
                 'telegram_chat_id': monitor.user.telegram_chat_id,
                 'user_id': monitor.user_id,
                 'enable_telegram': monitor.user.userconfig.enable_telegram,
                 'monitor_telegram': monitor.by_telegram,
+                'by_email': monitor.by_email,
+                'email': monitor.user.email,
                 'error_msg': error_msg}
+
         data = json.dumps(data).encode()
         await rmq_channel.default_exchange.publish(Message(data), routing_key="notification")
 

@@ -23,7 +23,7 @@ class ListMonitorSerializer(serializers.ModelSerializer):
         fields = ('id', 'monitor_type', 'interval_in_minutes', 'url', 'name', 'description', 'is_active', 'keyword', 'log',
                   'log_groups', 'interval', 'next_request', 'successful_percent', 'unsuccessful_percent',
                 'last_request_in_seconds','created', 'error_notification_interval',
-                  'error_notification_interval_in_minutes','by_telegram', 'max_timeout')
+                  'error_notification_interval_in_minutes','by_telegram', 'by_email', 'max_timeout')
 
         read_only_fields = ('is_active', 'next_request', 'log', 'error_notification_interval_in_minutes',
                             'successful_percent', 'last_request_in_seconds')
