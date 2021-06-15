@@ -120,7 +120,8 @@ class BaseWorker(ABC):
 
     async def send_to_channels(self, monitor, data):
         layer = get_channel_layer()
-        await layer.group_send(str(monitor.user), {'type': 'send_log', 'data': data})
+        await layer.group_send(str(monitor.user), {'type': 'send_log',
+                                                   'data': json.dumps(data)})
 
     async def handle_request(self, session: ClientSession, url, timeout, method='get'):
         timeout = ClientTimeout(total=timeout)
