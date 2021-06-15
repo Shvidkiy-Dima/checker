@@ -15,6 +15,7 @@ from channels.db import database_sync_to_async
 from django.utils import timezone
 from django.conf import settings
 from django.db import transaction
+from django.core.serializers.json import DjangoJSONEncoder
 from aio_pika import connect_robust,  Message
 from aredis import StrictRedis
 
@@ -121,8 +122,9 @@ class BaseWorker(ABC):
     async def send_to_channels(self, monitor, data):
         logger.warning(data)
         layer = get_channel_layer()
+        data = json.dumps(data, cls=DjangoJSONEncoder)
         await layer.group_send(str(monitor.user), {'type': 'send_log',
-                                                   'data': json.dumps(data)})
+                                                   'data': data})
 
     async def handle_request(self, session: ClientSession, url, timeout, method='get'):
         timeout = ClientTimeout(total=timeout)
