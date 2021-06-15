@@ -42,8 +42,10 @@ export default function DashBoard({ ws, logout, user }) {
   }
 
   function GetChangesFromWS(data) {
-    console.log("WS", data["data"]);
-    let log = data["data"];
+    let log = data["data"]
+    if (typeof log === 'string'){
+      log = JSON.parse(log)
+    }
     SetMonitors({ ...Monitors, [log.monitor.id]: log.monitor });
   }
 
