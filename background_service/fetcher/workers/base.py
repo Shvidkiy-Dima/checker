@@ -119,6 +119,7 @@ class BaseWorker(ABC):
         return StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
     async def send_to_channels(self, monitor, data):
+        logger.warning(data)
         layer = get_channel_layer()
         await layer.group_send(str(monitor.user), {'type': 'send_log',
                                                    'data': json.dumps(data)})
