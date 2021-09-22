@@ -1,7 +1,11 @@
 import React from "react";
-import { Layout, Menu, Button, Modal, Slider, Form, Input, Spin} from "antd";
+import { Layout, Menu, Row, Col, Button, Card, Modal, Slider, Form, Input, Spin, Statistic, Divider, Dropdown} from "antd";
 import {
   PlusOutlined,
+  CheckCircleTwoTone,
+  CloseCircleTwoTone,
+  DownOutlined,
+  EllipsisOutlined
 } from "@ant-design/icons";
 import "./monitor.css";
 import request from "../../utils/request";
@@ -59,6 +63,7 @@ export default function DashBoard({ ws, logout, user }) {
     return   <Spin size="large" style={{marginTop: '10%'}}/>
   }
 
+
   return (
     <Content
       className="site-layout-background"
@@ -82,11 +87,11 @@ export default function DashBoard({ ws, logout, user }) {
         </Button>
       </div>
 
-
-
+      <Row gutter={[16, 16]} >
       {Object.entries(Monitors).map(([key, value]) => (
         <Monitor delete_monitor={DeleteMonitor} key={key} monitor={value} />
       ))}
+      </Row>
     </Content>
   );
 }

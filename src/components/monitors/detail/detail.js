@@ -1,6 +1,10 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { Layout, Col, Row, Descriptions } from "antd";
+import { Layout, Col, Row, Descriptions, PageHeader } from "antd";
+import {
+  CheckCircleTwoTone,
+  ClockCircleOutlined,
+} from "@ant-design/icons";
 import "../monitor.css";
 import request from "../../../utils/request";
 import NotFound from "./not_found";
@@ -10,12 +14,13 @@ import convert_for_bar from "../../../utils/methods";
 import Moment from "react-moment";
 import Moment_f from "moment";
 import { Card, List, Table} from "antd";
+import Timer from "./../timer";
 
 export default function DetailMonitor() {
+
   const [monitor, setMonitor] = React.useState(null);
   const [NotFoundError, setNotFoundError] = React.useState(false);
   const [BarMonitor, SetBarMonitor] = React.useState([]);
-  const [ErrorLogs, SetErrorLogs] = React.useState(null);
   const [config, setConfig] = React.useState(null);
   const [dataSource, SetDataSource] = React.useState(null);;
   let { monitorId } = useParams();
@@ -24,8 +29,6 @@ export default function DetailMonitor() {
 
   function getMonitor() {
 
-
-
     request(
       { url: "api/monitor/" + monitorId + "/", method: "get" },
       (res) => {
@@ -33,10 +36,10 @@ export default function DetailMonitor() {
         SetBarMonitor(
           convert_for_bar(res.data.log_groups, res.data.interval)
         );
-        let data = res.data.last_requests.map((i) => {
+        let data = res.data.response_time_for_day.map((i) => {
           return {
-            date: Moment_f.utc(i.created).local().format("HH:mm:ss"),
-            res_time: i.response_time,
+            date: `${Moment_f.utc(i.start).local().format("HH:mm:ss")}-${Moment_f.utc(i.end).local().format("HH:mm:ss")}`,
+            res_time: i.md,
           };
         });
 
@@ -49,7 +52,7 @@ export default function DetailMonitor() {
               key: n,
               created: Moment_f.utc(i.created).local().format("MM.DD-HH:mm:ss"),
               error: i.error,
-              res_code: i.res_code,
+              res_code: i.response_code,
               res_time: i.response_time
             })
           }
@@ -62,7 +65,7 @@ export default function DetailMonitor() {
           height: 400,
           xField: "date",
           yField: "res_time",
-          point: { size: 1, shape: "diamond" },
+          point: { size: 0.1, shape: "diamond" },
         });
       },
       (err) => {
@@ -100,10 +103,11 @@ export default function DetailMonitor() {
       title: 'Response time',
       dataIndex: 'res_time',
       key: 'res_time',
+      responsive: ['md'],
     },
   ];
 
-  console.log(dataSource, '!!!!!!!!!!!!!1')
+
   return (
     <div>
       <Layout.Content
@@ -114,55 +118,112 @@ export default function DetailMonitor() {
           minHeight: 280,
         }}
       >
-        <Row gutter={16}>
-          <Col span={24}>
-            <h1 style={{ fontSize: "1.5em" }}>{monitor.name}</h1>
-          </Col>
-          <Col span={24}>
-            <h2>
-              <Link to={monitor.url}>{monitor.url}</Link>
-            </h2>
-          </Col>
-          <Col span={24}>Last 24 hours monitoring</Col>
-          <Col span={16}>
-            <Bar readings={BarMonitor} monitor={monitor} />
-          </Col>
 
+  <PageHeader
+    className="site-page-header"
+    title="Monitors"
+    onBack={() => window.history.back()}
+  />
 
-          </Row>
-          <Row gutter={16}>
-          <Col span={16}>
-            <h3>Last 24 hours response time</h3>
-            <Line {...config} />
-          </Col>
-          <Col span={8}>
-            <Row justify="center">
-              <List>
-                <List.Item>
-                  <Card  title='Interval' bordered={false}>
-                    {monitor.interval_in_minutes}min
-                    </Card>
-                </List.Item>
-                <List.Item>
-                  <Card title='Created' bordered={false}>{Moment_f.utc(monitor.created).local().format("Y/M/D HH:mm:ss")}</Card>
-                </List.Item>
-                <List.Item>
-                  <Card title='Notifications' bordered={false}>Telegram</Card>
-                </List.Item>
-                <List.Item>
-                  <Card title='Timeout' bordered={false}>{monitor.max_timeout}</Card>
-                </List.Item>
-              </List>
-            </Row>
-          </Col>
-          </Row>
+  <Row  style={{background: 'white', marginBottom: 10}}>
+    <Col span={24} style={{ fontSize: "1.5em", marginLeft: 20, marginTop: 5 }}>
+    <h1><CheckCircleTwoTone twoToneColor="#52c41a" style={{marginRight: 10}}/>{monitor.name}</h1>
+    </Col>
+    <Col style={{marginLeft: 20}} span={24}>
+    <h2>
+    {monitor.url}
+    </h2>
+    </Col>
+  </Row>
+
+  <Row gutter={[16, 16]}>
+      <Col xl={8} lg={12} md={12} sm={12} xs={24}>
+        <Card bordered={false}>
           <Row>
-          <Col>
+            <Col span={24} style={{fontSize: '2rem', textAlign: 'center'}}>
+            <ClockCircleOutlined /> Uptime
+            </Col>
+            <Col span={24} style={{fontSize: '1.5rem', textAlign: 'center'}}>
+            {monitor.successful_percent}%
+            </Col>
+          </Row>
+        </Card>
+      </Col>
+      <Col xl={8} lg={12} md={12} sm={12} xs={24}>
+        <Card bordered={false}>
+        <Row>
+            <Col span={24} style={{fontSize: '2rem', textAlign: 'center'}}>
+            <ClockCircleOutlined /> Avg. response time
+            </Col>
+            <Col span={24} style={{fontSize: '1.5rem', textAlign: 'center'}}>
+            {monitor.avg_response_time} sec
+            </Col>
+          </Row>
+        </Card>
+      </Col>
+      <Col xl={8} lg={12} md={12} sm={12} xs={24}>
+        <Card bordered={false}>
+          
+        <Row>
+            <Col span={24} style={{fontSize: '2rem', textAlign: 'center'}}>
+            <ClockCircleOutlined /> interval
+            </Col>
+            <Col span={24} style={{fontSize: '1.5rem', textAlign: 'center'}}>
+            Every {monitor.interval}
+            </Col>
+          </Row>
+
+
+        </Card>
+      </Col>
+      <Col xl={8} lg={12} md={12} sm={12} xs={24}>
+        <Card bordered={false}>
+        
+        <Row>
+            <Col span={24} style={{fontSize: '2rem', textAlign: 'center'}}>
+            <ClockCircleOutlined /> Last checked
+            </Col>
+            <Col span={24} style={{fontSize: '1.5rem', textAlign: 'center'}}>
+            {monitor.last_request_in_seconds} sec ago
+            </Col>
+          </Row>
+
+        </Card>
+      </Col>
+      <Col xl={8} lg={12} md={12} sm={12} xs={24}>
+        <Card bordered={false}>
+
+       
+
+        <Row>
+            <Col span={24} style={{fontSize: '2rem', textAlign: 'center'}}>
+            <ClockCircleOutlined /> Scale
+            </Col>
+            <Col span={24}>
+            <Bar readings={BarMonitor} monitor={monitor}/>
+            </Col>
+          </Row>
+
+        </Card>
+
+
+      </Col>
+
+
+      <Col span={24}>
+          <Card title="Last 24 hours response time" bordered={false}>
+            <Line {...config} />
+            </Card>
+          </Col>
+
+          <Col span={24}>
             <hr/>
             <h2>Last 24h error logs</h2>
+            <Table columns={columns} dataSource={dataSource}/>
           </Col>
-            </Row>
-          <Table columns={columns} dataSource={dataSource}/>
+
+
+    </Row>
       </Layout.Content>
     </div>
   );

@@ -2,6 +2,17 @@ import React from "react";
 import { Popover, Modal, Slider, Form, Input, Alert, Switch } from "antd";
 import request from "../../utils/request";
 
+import {
+  CheckCircleTwoTone,
+  CloseOutlined,
+  CloseCircleTwoTone,
+  DownOutlined,
+  EllipsisOutlined,
+  MenuUnfoldOutlined,
+  EditOutlined,
+  PoweroffOutlined,
+  InfoCircleOutlined
+} from "@ant-design/icons";
 
 export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user }) {
   const [MonitorType, setMonitorType] = React.useState(null);
@@ -78,25 +89,29 @@ export default function MonitorForm({ show, setShow, SetMonitors, Monitors, user
           </Form.Item>
           <Form.Item name="size">
           <Popover placement="topLeft" content={'Interval beetwen error messages'}>
-          Error notification interval
+          <InfoCircleOutlined/> Error notification interval
           </Popover>
-            <Slider min={5} max={60} defaultValue={interval} onChange={(e)=>{setErrorInterval(e)}} disabled={false} />
+            <Slider min={1} max={60} defaultValue={interval} onChange={(e)=>{setErrorInterval(e)}} disabled={false} />
           </Form.Item>
 
-          <Popover placement="topLeft" content={'How often we will make requests'}>
-          Interval
+          <Popover placement="topLeft" content={'How often we will check your monitor'}>
+          <InfoCircleOutlined/> Check interval
           </Popover>
           <Form.Item name="size">
             <Slider min={1} max={60} defaultValue={interval} onChange={(e)=>{setInterval(e)}} disabled={false} />
           </Form.Item>
 
           <Popover placement="topLeft" content={'Max timeout per request'}>
-          Max timeout
+          <InfoCircleOutlined/> Request timeout
           </Popover>
           <Form.Item name="timeout">
             <Slider min={1} max={30} defaultValue={MaxTimeout} onChange={(e)=>{setMaxTimeout(e)}} disabled={false} />
           </Form.Item>
 
+
+          <p>
+          Notifications
+          </p>
           <Form.Item name="size">
             <div style={{display: 'flex'}}>
             <p style={{marginRight: '5%'}}>TELEGRAM </p>

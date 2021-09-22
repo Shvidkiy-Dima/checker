@@ -1,6 +1,8 @@
+import statistics
 from uuid import uuid4
 from datetime import timedelta
 from django.db import models
+from django.db.models import Avg, F
 from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 from utils.models import BaseModel
@@ -80,13 +82,57 @@ class Monitor(BaseModel):
     def last_log(self):
         return self.logs.order_by('created').last()
 
-    def last_logs_for_day(self):
+    def last_error_requests(self):
+        pass
+
+    def last_logs_for_day(self, convert=False):
         hours = 24
         if hasattr(self, 'last_logs'):
-            return self.last_logs
+            logs = self.last_logs
 
-        delta = timezone.now() - timedelta(hours=hours)
-        return self.logs.filter(created__gt=delta).order_by('created')
+        else:
+            logs = self.logs.for_hours(hours)
+
+        if isinstance(logs, list) and convert:
+            logs = MonitorLog.objects.filter(id__in=[l.id for l in logs])
+
+        return logs
+
+    @property
+    def log_last_count(self):
+        return self.last_logs_for_day(convert=True).count()
+
+    @property
+    def avg_response_time(self):
+        hours = 24
+        logs = self.last_logs_for_day(convert=True)
+        avg = logs.aggregate(avg_res_time=Avg('response_time'))['avg_res_time'] or 0
+        return round(avg, 3)
+
+    def response_time_for_day(self):
+        #TODO: move to DB request
+
+        group_count = 20
+        group_temp = []
+        groups = []
+        logs = self.last_logs_for_day()
+        for log in logs:
+            group_temp.append(log)
+            if len(group_temp) == group_count:
+                start = group_temp[0].created
+                end = group_temp[-1].created
+                md = statistics.median([l.response_time for l in group_temp])
+                groups.append({'start': start, 'end': end, 'md': round(md, 3)})
+                group_temp.clear()
+
+        if len(group_temp) > 0:
+            start = group_temp[0].created
+            end = group_temp[-1].created
+            md = statistics.median([l.response_time for l in group_temp])
+            groups.append({'start': start, 'end': end, 'md': round(md, 3)})
+            group_temp.clear()
+
+        return groups
 
     def get_groups(self):
         data = self.last_logs_for_day()
@@ -139,7 +185,7 @@ class Monitor(BaseModel):
                                     response_code__lt=400,
                                     error__isnull=True).count()
 
-        return count * 100 // len(logs) if count != 0 else count
+        return round(count * 100 / len(logs) if count != 0 else count, 3)
 
     @property
     def unsuccessful_percent(self):
@@ -147,7 +193,7 @@ class Monitor(BaseModel):
         if successful_percent is None:
             return None
 
-        return 100 - successful_percent
+        return round(100 - successful_percent, 3)
 
     @property
     def error_notification_interval_in_minutes(self):
@@ -172,8 +218,10 @@ class MonitorLogManager(models.Manager):
 class MonitorLogQuerySet(models.QuerySet):
 
     def for_hours(self, hours=24):
-        delta = timezone.now() - timedelta(hours=hours)
-        return self.filter(created__gt=delta)
+        #now = timezone.now()
+        now = timezone.now() - timedelta(hours=2360)
+        delta_start = now - timedelta(hours=hours)
+        return self.filter(created__gt=delta_start, created__lt=now)
 
 
 class MonitorLog(BaseModel):

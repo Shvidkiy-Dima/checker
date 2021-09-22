@@ -45,6 +45,7 @@ class BaseWorker(ABC):
         pass
 
     def run(self, conn):
+        # TODO: loop.run_until_complete  - run create new event loop
         logger.info(f'Start {self.__class__.__name__}')
         asyncio.run(self.main(conn))
 

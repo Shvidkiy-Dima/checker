@@ -95,7 +95,8 @@ export default function DashBoard({ ws, logout, user, setUser}) {
 
   return (
     <Layout style={{minHeight: '100%'}}>
-      <Sider trigger={null} breakpoint="lg" collapsedWidth="0">
+      <Sider  breakpoint="lg" collapsedWidth="0" trigger={null}>
+      <div style={{color: 'white'}}><img style={{marginLeft: '20%'}} className="logo" src="/assets/img/logo.png" /></div>
         <Menu
           style={{ marginTop: "50%" }}
           theme="dark"
@@ -124,10 +125,17 @@ export default function DashBoard({ ws, logout, user, setUser}) {
           >
             Logout
           </Menu.Item>
+
+          <Menu.Item
+          style={{color: 'white', fontSize: '1rem'}}
+          >
+            {user.email}
+          </Menu.Item>
+
         </Menu>
       </Sider>
 
-      <Layout style={{ height: "100%" }} className="site-layout">
+      <Layout style={{ height: "100%", background: '#ebe4e4'}} className="site-layout">
         <Switch>
           <Route exact path="/dashboard/settings">
           <Layout.Header
@@ -141,32 +149,10 @@ export default function DashBoard({ ws, logout, user, setUser}) {
           </Route>
 
           <Route path="/dashboard/:monitorId">
-          <Layout.Header className="site-layout-background" style={{ padding: 0 }}>
-            <Row justify='space-between'>
-              <Col>
-              <Link to="/dashboard">
-          <DoubleLeftOutlined
-            style={{ fontSize: "2em", marginRight: "10%" }}
-          />
-        </Link>
-              </Col>
-              <Col style={{marginRight: '10%'}}>
-              <h2 style={{marginRight: '10%'}}>{user.email}</h2>
-              </Col>
-            </Row>
-      </Layout.Header>
             <DetailMonitor />
           </Route>
 
           <Route exact path="/dashboard">
-            <Layout.Header
-              className="site-layout-background"
-              style={{ padding: 0, display: 'flex', justifyContent: 'space-between'}}
-              
-            >
-              <img style={{marginLeft: '10%'}} GclassName="logo" src="/assets/img/logo_black.png" />
-              <h2 style={{marginRight: '5%'}}>{user.email}</h2>
-            </Layout.Header>
             <Monitors ws={ws} logout={logout} user={user} />
           </Route>
         </Switch>

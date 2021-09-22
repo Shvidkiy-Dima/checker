@@ -4,7 +4,7 @@
 }
 
 body {
-    background-color: #f9f9fa
+    background-color:  #ebe4e4;
 }
 
 .flex {
@@ -121,7 +121,7 @@ h6 {
 
   
   .site-layout .site-layout-background {
-    background: #fff;
+    background: #ebe4e4;
   }
 
 
@@ -172,4 +172,3 @@ h6 {
 	margin-left: 2px;
 	vertical-align: middle;
 }
-

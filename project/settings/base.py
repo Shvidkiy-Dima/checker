@@ -74,6 +74,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'utils.middlewares.QueryCountMiddleware',
 ]
 
 ROOT_URLCONF = 'project.urls'
@@ -219,43 +220,43 @@ CONFIRMATION_TELEGRAM_EXPIRATION = 12 # hours
 TELEGRAM_BOT_NAME = 'IsaliveProjectNotificationsBot'
 TELEGRAM_BOT_TOKEN = '1799516847:AAF2zRucTQOUiBg_aNu5ZqxdxfovBIBlZEY'
 
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s '
-            '%(process)d %(thread)d %(message)s'
-        }
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        },
-
-        'log_file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'verbose',
-            'backupCount': 12,
-            'maxBytes': 16 * 1000000,
-            'filename': os.path.join(BASE_DIR / 'logs/app.log'),
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-        },
-        'django.request': {
-            'handlers': ['log_file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-    'root':
-        {'level': 'INFO',
-         'handlers': ['log_file']
-         },
-}
+#
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '%(levelname)s %(asctime)s %(module)s '
+#             '%(process)d %(thread)d %(message)s'
+#         }
+#     },
+#     'handlers': {
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#         },
+#
+#         'log_file': {
+#             'level': 'INFO',
+#             'class': 'logging.handlers.RotatingFileHandler',
+#             'formatter': 'verbose',
+#             'backupCount': 12,
+#             'maxBytes': 16 * 1000000,
+#             'filename': os.path.join(BASE_DIR / 'logs/app.log'),
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console'],
+#         },
+#         'django.request': {
+#             'handlers': ['log_file'],
+#             'level': 'INFO',
+#             'propagate': False,
+#         },
+#     },
+#     'root':
+#         {'level': 'INFO',
+#          'handlers': ['log_file', 'console']
+#          },
+# }

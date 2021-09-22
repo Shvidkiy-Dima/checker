@@ -7,6 +7,7 @@ import ProtectedRoute from "./utils/router";
 import request from "./utils/request";
 import ws from './utils/ws'
 import './App.css'
+import axios from "axios";
 import { createBrowserHistory } from "history";
 import {
   BrowserRouter as Router,
