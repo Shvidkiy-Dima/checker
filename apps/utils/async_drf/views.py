@@ -40,3 +40,6 @@ class AsyncApiView(APIView):
 
         self.response = self.finalize_response(request, response, *args, **kwargs)
         return self.response
+
+    def handle_serializer(self, serializer):
+        raise NotImplementedError

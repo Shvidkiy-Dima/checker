@@ -4,6 +4,8 @@ import time
 import json
 import pytz
 import logging
+from typing import Tuple, Union
+from dataclasses import dataclass, asdict
 from datetime import timedelta, datetime
 from abc import ABC, abstractmethod
 from channels.layers import get_channel_layer
@@ -16,10 +18,28 @@ from django.utils import timezone
 from django.conf import settings
 from django.db import transaction
 from django.core.serializers.json import DjangoJSONEncoder
-from aio_pika import connect_robust,  Message
+from aio_pika import connect_robust, Message
+from aio_pika.connection import ConnectionType
 from aredis import StrictRedis
+from utils.functions import is_successful_response_code
 
 logger = logging.getLogger()
+
+
+@dataclass
+class ErrorMessage:
+    url: str
+    name: str
+    telegram_chat_id: str
+    user_id: int
+    enable_telegram: bool
+    by_telegram: bool
+    by_email: bool
+    email: str
+    error_msg: str
+
+
+
 
 
 class BaseWorker(ABC):
@@ -37,7 +57,7 @@ class BaseWorker(ABC):
         pass
 
     @abstractmethod
-    async def handle_response(self, response, monitor, response_time, body):
+    async def handle_response(self, monitor: Monitor, body: bytes, response_time: float,  response_code: int):
         pass
 
     @abstractmethod
@@ -70,36 +90,60 @@ class BaseWorker(ABC):
 
             conn.send(1)
 
-    async def fetch(self, monitor, session, rmq_channel):
+    async def fetch(self, monitor: Monitor, session: ClientSession, rmq_channel: ConnectionType):
         logger.info(f'Start processing monitor {monitor.url} for user {monitor.user.email}')
-        error, response, body, response_time\
-            = await self.handle_request(session, monitor.url, timeout=monitor.max_timeout.seconds)
 
-        if not error:
-            logger.info(f'Request to {monitor.url} status {response.status}')
-        else:
-            logger.info(f'Request to {monitor.url} error {response}')
+        is_error, body, response_time, response_code = await self.handle_request(session, monitor.url,
+                                                                                 timeout=monitor.max_timeout.seconds)
 
-        if not error:
-            data = await self.handle_response(response, monitor, response_time, body)
+        if not is_error:
+            logger.info(f'Request to {monitor.url} status {response_code}')
+            data = await self.handle_response(monitor, body, response_time,  response_code)
         else:
-            data = await self.handle_error(response, monitor, response_time)
+            logger.info(f'Request to {monitor.url} error {body}')
+            data = await self.handle_error(monitor, body, response_time)
 
         logger.info(f'New log created for {monitor.url}. Next request - {data["monitor"]["next_request"]}')
+
         await self.send_to_channels(monitor, data)
-        if error or status.is_server_error(response.status) or status.is_client_error(response.status):
-            status_code = response.status if not error else "Server error"
-            reason = response if error else response.reason
-            error_msg = f'{status_code}:  {reason}'
+
+        if is_error or not is_successful_response_code(response_code):
+            status_code = response_code or "Server error"
+            error_msg = f'{status_code}:  {body}'
             await self.send_error_msg(monitor, rmq_channel, error_msg)
 
+    async def handle_request(self, session: ClientSession, url: str,
+                             timeout: int, method: str = 'get') -> Tuple[bool, Union[str, bytes], float, Union[None, int]]:
+
+        timeout = ClientTimeout(total=timeout)
+        start = time.monotonic()
+        try:
+            async with session.request(method, url, timeout=timeout) as response:
+                body = await response.read()
+                response_code = response.status
+                if is_successful_response_code(response_code):
+                    is_error = False
+                else:
+                    is_error = True
+                    body = self._convert_error_body(body)
+
+        except Exception as e:
+            is_error = True
+            response_code = None
+            body = self._convert_request_exception(e)
+
+        response_time = time.monotonic() - start
+
+        return is_error, body, response_time,  response_code
+
+
     @database_sync_to_async
-    def handle_error(self, error, monitor, response_time):
+    def handle_error(self, monitor: Monitor, body: str, response_time: float) -> dict:
         with transaction.atomic():
             monitor.last_request = timezone.now()
             monitor.next_request = timezone.now() + monitor.interval
             monitor.save(update_fields=['last_request', 'next_request'])
-            log = self.make_log(monitor, response_time, error=error)
+            log = self.make_log(monitor, response_time, error=body)
             data = MonitorLogSerializer(log).data
             return data
 
@@ -120,58 +164,51 @@ class BaseWorker(ABC):
     def get_redis_conn(self):
         return StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
-    async def send_to_channels(self, monitor, data):
+    async def send_to_channels(self, monitor: Monitor, data: dict):
         layer = get_channel_layer()
         data = json.dumps(data, cls=DjangoJSONEncoder)
         await layer.group_send(str(monitor.user), {'type': 'send_log',
                                                    'data': data})
 
-    async def handle_request(self, session: ClientSession, url, timeout, method='get'):
-        timeout = ClientTimeout(total=timeout)
-        start = time.monotonic()
-        try:
-            async with session.request(method, url, timeout=timeout) as response:
-                body = await response.read()
-                error, response, body = False, response, body
-
-        except Exception as e:
-            error, response, body = True, self._convert_request_exception(e), b''
-
-        response_time = time.monotonic() - start
-
-        return error, response, body, response_time
-
-    async def send_error_msg(self, monitor, rmq_channel, error_msg):
+    async def send_error_msg(self, monitor: Monitor, rmq_channel: ConnectionType, error_msg: str):
         error_interval = monitor.error_notification_interval
         cache_key = f'error_notify_monitor_{monitor.id}'
         last_error = await self.cache.get(cache_key, None)
         if last_error and timezone.now() < (datetime.fromtimestamp(last_error, pytz.utc) + error_interval):
             logger.info(f'Error notification already was sent to {monitor.user.email}. '
                         f'Next {datetime.fromtimestamp(last_error, pytz.utc) + error_interval}')
-            return
+        else:
+            logger.info(f'Send error notification to {monitor.user.email}')
+            await self.cache.set(cache_key, time.time())
 
-        logger.info(f'Send error notification to {monitor.user.email}')
-        await self.cache.set(cache_key, time.time())
+            data = ErrorMessage(url=monitor.url,
+                                name=monitor.name,
+                                telegram_chat_id=monitor.user.telegram_chat_id,
+                                user_id=monitor.user.id,
+                                enable_telegram=monitor.user.userconfig.enable_telegram,
+                                by_telegram=monitor.by_telegram,
+                                by_email=monitor.by_email,
+                                email=monitor.user.email,
+                                error_msg=error_msg)
 
-        data = {'url': monitor.url,
-                'name': monitor.name,
-                'telegram_chat_id': monitor.user.telegram_chat_id,
-                'user_id': monitor.user_id,
-                'enable_telegram': monitor.user.userconfig.enable_telegram,
-                'monitor_telegram': monitor.by_telegram,
-                'by_email': monitor.by_email,
-                'email': monitor.user.email,
-                'error_msg': error_msg}
-
-        data = json.dumps(data).encode()
-        await rmq_channel.default_exchange.publish(Message(data), routing_key="notification")
+            data = json.dumps(asdict(data)).encode()
+            await rmq_channel.default_exchange.publish(Message(data), routing_key="notification")
 
     @database_sync_to_async
     def fetch_monitors(self, ids):
-        return list(Monitor.objects.filter(id__in=ids).active().select_related('user', 'user__userconfig'))
+        return list(Monitor.objects.filter(id__in=ids).active()
+                    .select_related('user', 'user__userconfig')
+                    .prefetch_for_day().annotate_avg_response_time())
 
-    def _convert_request_exception(self, exc):
+    def _convert_request_exception(self, exc) -> str:
         if type(exc) == asyncio.exceptions.TimeoutError:
             return 'Timeout error'
 
         return f'{type(exc)}: {exc}'
+
+    def _convert_error_body(self, body: bytes) -> str:
+        try:
+            return str(json.loads(body))
+        except Exception:
+            body = body.decode(encoding='utf8', errors='replace')[:300]
+            return body

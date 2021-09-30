@@ -17,7 +17,7 @@ class HttpWorker(BaseWorker):
 
     @classmethod
     def get_monitors(cls):
-        return Monitor.objects.get_nearest().filter(monitor_type=Monitor.MonitorType.HTTP)
+        return Monitor.objects.get_nearest().all().prefetch_related().annotate_avg_response_time()
 
     def start_request(self, session: ClientSession, url, timeout=5, method='get'):
         timeout = ClientTimeout(total=timeout)
@@ -26,15 +26,16 @@ class HttpWorker(BaseWorker):
     def get_client_session(self, *args, **kwargs):
         return aiohttp.ClientSession()
 
-    async def handle_response(self, response, monitor, response_time, body):
-        return await self.write_to_db(response, monitor, response_time)
+    async def handle_response(self, monitor: Monitor, body: bytes, response_time: float,  response_code: int) -> dict:
+        return await self.write_to_db(monitor, response_time, response_code)
 
     @database_sync_to_async
-    def write_to_db(self, response, monitor, response_time):
+    def write_to_db(self, monitor: Monitor, response_time: float, response_code: int) -> dict:
+
         with transaction.atomic():
             monitor.last_request = timezone.now()
             monitor.next_request = timezone.now() + monitor.interval
             monitor.save(update_fields=['last_request', 'next_request'])
-            log = self.make_log(monitor, response_time, response_code=response.status)
+            log = self.make_log(monitor, response_time, response_code=response_code)
             data = MonitorLogSerializer(log).data
             return data

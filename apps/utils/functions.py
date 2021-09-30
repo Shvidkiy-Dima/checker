@@ -24,3 +24,10 @@ def is_valid_password(password: str, user: Optional[User] = None):
 def get_user_by_token(token):
     token = Token.objects.filter(key=token).first()
     return token.user if token else AnonymousUser()
+
+
+def is_successful_response_code(code: int) -> bool:
+    if code >= 400:
+        return False
+
+    return True

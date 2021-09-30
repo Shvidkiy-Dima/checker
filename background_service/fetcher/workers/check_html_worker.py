@@ -9,6 +9,10 @@ from channels.db import database_sync_to_async
 
 
 class HtmlCheckWorker(BaseWorker):
+    """
+    NOT USED
+    """
+
 
     @classmethod
     def get_monitors(cls):

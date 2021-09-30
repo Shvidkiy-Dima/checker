@@ -31,7 +31,7 @@ class Dispatcher:
         msg = f'Something wrong - {data["name"]} - {data["url"]} - {data["error_msg"]}'
         logger.info(msg)
 
-        if data['telegram_chat_id'] and data['enable_telegram'] and data['monitor_telegram']:
+        if data['telegram_chat_id'] and data['by_telegram'] and data['monitor_telegram']:
             await self.senders['telegram'].send_message(msg, data['telegram_chat_id'], data['user_id'])
 
         if data['by_email'] and data['email']:
