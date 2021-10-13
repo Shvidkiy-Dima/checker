@@ -9,7 +9,7 @@ RUN npm install -f && mkdir /react-ui && mv ./node_modules ./react-ui
 
 WORKDIR /react-ui
 
-COPY ./front-dashboard .
+COPY ./front-dashboard/* .
 
 # Build the project and copy the files
 RUN npm run build
