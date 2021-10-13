@@ -1,0 +1,25 @@
+.login_containser {
+    height: '100%';
+    background-color: rgb(208, 219, 228);
+}
+.login-form {
+    max-width: 400px;
+  }
+  .login-form-forgot {
+    float: right;
+  }
+  .ant-col-rtl .login-form-forgot {
+    float: left;
+  }
+  .login-form-button {
+    width: 100%;
+  }
+.site-card-border-less-wrapper {
+    background: #30303017;
+  }
+
+  .img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }

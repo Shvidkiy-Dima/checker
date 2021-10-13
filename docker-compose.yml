@@ -1,0 +1,105 @@
+version: '3.5'
+
+services:
+
+  django:
+    build:
+      context: .
+      dockerfile: compose/django/Dockerfile
+    image: checkitout_django
+    depends_on:
+        - db
+        - rabbit
+        - redis
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    volumes:
+      - ./docker_logs/django_logs:/app/logs
+      - ./media:/app/media
+
+  nginx:
+    build:
+      context: .
+      dockerfile: compose/nginx/Dockerfile
+    image: checkitout_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - django
+
+  fetcher:
+    build:
+      context: .
+      dockerfile: compose/fetcher/Dockerfile
+    image: checkitout_fetcher
+    depends_on:
+      - db
+      - rabbit
+      - redis
+      - django
+    restart: always
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    volumes:
+      - ./docker_logs/fetcher_logs:/app/background_service/fetcher/logs
+
+  notifier:
+    build:
+      context: .
+      dockerfile: compose/notifier/Dockerfile
+    image: checkitout_notifier
+    depends_on:
+      - db
+      - rabbit
+      - redis
+      - django
+    restart: always
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    volumes:
+      - ./docker_logs/notifier_logs:/app/background_service/notifier/logs
+
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:3.8.16-management
+    restart: always
+    ports:
+      - "15672:15672"
+    env_file:
+      - ./.envs/.prod/.rmq
+
+  celery:
+    build:
+      context: .
+      dockerfile: compose/celery/Dockerfile
+    restart: always
+    env_file:
+      - ./.envs/.prod/.django
+      - ./.envs/.prod/.postgres
+    depends_on:
+        - db
+        - rabbit
+        - redis
+    volumes:
+      - ./docker_logs/celery_logs:/app/logs
+
+  redis:
+    image: redis:latest
+    restart: always
+
+  db:
+    hostname: db
+    image: kartoza/postgis
+    restart: always
+    volumes:
+      - ./postgres-data:/var/lib/postgresql
+    env_file:
+      - ./.envs/.prod/.postgres

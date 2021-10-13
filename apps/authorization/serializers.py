@@ -20,6 +20,15 @@ class SignUpSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value):
+            raise serializers.ValidationError('Email has been already taken')
+
+        return value
+
+    def validate(self, attrs):
+        return attrs
+
     def create(self, validated_data):
         confirmation_email = super().create(validated_data)
         run_task(send_conf_email, confirmation_email.id)

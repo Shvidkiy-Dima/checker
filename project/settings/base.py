@@ -13,10 +13,14 @@ import os
 from pathlib import Path
 import sys
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 APPS_DIR = BASE_DIR / 'apps'
+
+PUBLIC_ROOT = BASE_DIR / 'media'
 FETCHER_DIR = BASE_DIR / 'background_service/fetcher'
+NOTIFIER_DIR = BASE_DIR / 'background_service/notifier'
 
 sys.path.insert(0, str(APPS_DIR))
 
@@ -24,16 +28,16 @@ sys.path.insert(0, str(APPS_DIR))
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '40#ap-=*!mdg74pog+zv%@w2hyuuotz#4%==i!m24e&h^$9(^2'
+SECRET_KEY = os.environ.get('SECRET_KEY', '40#ap-=*!mdg74pog+zv%@w2hyuuotz#4%==i!m24e&h^$9(^2')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-API_HOST = 'localhost:8000'
-SITE_HOST = 'localhost:8000'
-LOGIN_PAGE = SITE_HOST + '/login/'
+API_HOST = 'http://localhost:8000'
+SITE_HOST = 'http://localhost:3000'
+LOGIN_PAGE = SITE_HOST + '/login'
 
 # Application definition
 
@@ -58,6 +62,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'channels',
+    'solo',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +74,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'utils.middlewares.QueryCountMiddleware',
 ]
 
 ROOT_URLCONF = 'project.urls'
@@ -143,78 +149,114 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = PUBLIC_ROOT / 'static'
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
 
 AUTH_USER_MODEL = 'account.User'
 
 CONFIRMATION_EMAIL_EXPIRATION = 24
 
+DEFAULT_FROM_EMAIL = 'checkitout.service@mail.ru'
+EMAIL_USE_SSL = True
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_HOST_USER = 'checkitout.service@mail.ru'
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = 465
+
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_THROTTLE_RATES': {
+        "auth": '100/m'
+    },
 }
 REST_DATE_FORMAT = '%m-%d-%Y'
 REST_DATETIME_FORMAT = '%m-%d-%Y %H:%M:%S'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+MQ_HOST = os.environ.get('MQ_HOST', 'localhost')
+MQ_PORT = int(os.environ.get('MQ_PORT', 5672))
+MQ_USER = os.environ.get('RABBITMQ_DEFAULT_USER', 'guest')
+MQ_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
+
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+
+
+# Celery settings
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+USE_CELERY = True
+
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
 
 
-PUSH_NOTIFICATIONS_SETTINGS = {
-        "FCM_API_KEY": 'AAAAU26WSJw:APA91bE5VYuX4_3Psa3xhOo8lrYgTVTYci77ozKs_7ajNExfViUbPHRWsVCd8tq4s8xd73odb3TYC4ph4bpCYRykN3D1ffAh1syRHZV2_LMK_wKip4007kWMf8AUe7cUoknFK95d2Yt0',
-        "UPDATE_ON_DUPLICATE_REG_ID": True
-}
+# PUSH_NOTIFICATIONS_SETTINGS = {
+#         "FCM_API_KEY": 'AAAAU26WSJw:APA91bE5VYuX4_3Psa3xhOo8lrYgTVTYci77ozKs_7ajNExfViUbPHRWsVCd8tq4s8xd73odb3TYC4ph4bpCYRykN3D1ffAh1syRHZV2_LMK_wKip4007kWMf8AUe7cUoknFK95d2Yt0',
+#         "UPDATE_ON_DUPLICATE_REG_ID": True
+# }
 
 # Telegram
-CONFIRMATION_TELEGRAM_EXPIRATION = 12
+CONFIRMATION_TELEGRAM_EXPIRATION = 12 # hours
 TELEGRAM_BOT_NAME = 'IsaliveProjectNotificationsBot'
-TELEGRAM_BOT_TOKEN = '1799516847:AAF2zRucTQOUiBg_aNu5ZqxdxfovBIBlZEY'
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s '
-            '%(process)d %(thread)d %(message)s'
-        }
-    },
-    'handlers': {
-            'fetcher_logfile': {
-                'level':'DEBUG',
-                'class':'logging.handlers.RotatingFileHandler',
-                'filename': FETCHER_DIR / 'logs/app.log',
-                'maxBytes': 1024*1024*1024,
-                'backupCount': 12,
-                'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-        },
-        'django.db.backends': {
-            'handlers': ['console', ],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-        'fetcher':
-            {'level': 'DEBUG',
-            'propagate': False,
-            'handlers': ['fetcher_logfile', 'console']
-         },
-}
+#
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '%(levelname)s %(asctime)s %(module)s '
+#             '%(process)d %(thread)d %(message)s'
+#         }
+#     },
+#     'handlers': {
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#         },
+#
+#         'log_file': {
+#             'level': 'INFO',
+#             'class': 'logging.handlers.RotatingFileHandler',
+#             'formatter': 'verbose',
+#             'backupCount': 12,
+#             'maxBytes': 16 * 1000000,
+#             'filename': os.path.join(BASE_DIR / 'logs/app.log'),
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console'],
+#         },
+#         'django.request': {
+#             'handlers': ['log_file'],
+#             'level': 'INFO',
+#             'propagate': False,
+#         },
+#     },
+#     'root':
+#         {'level': 'INFO',
+#          'handlers': ['log_file', 'console']
+#          },
+# }

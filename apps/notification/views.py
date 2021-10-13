@@ -8,3 +8,8 @@ class TelegramConfirmationCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class TelegramDisableView(generics.CreateAPIView):
+    serializer_class = serializers.TelegramDisableSerializer
+    permission_classes = (permissions.IsAuthenticated,)

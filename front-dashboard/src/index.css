@@ -1,0 +1,6 @@
+@import '~antd/dist/antd.css';
+
+body #root{
+    height: 100%
+}
+

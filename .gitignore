@@ -47,6 +47,7 @@ coverage.xml
 *,cover
 .hypothesis/
 
+postgres-data
 # Translations
 *.mo
 *.pot
@@ -79,11 +80,14 @@ celerybeat-schedule
 
 # dotenv
 .env
+.envs
 
 
 # virtualenv
 venv/
 ENV/
+
+docker_logs
 
 # Spyder project settings
 .spyderproject
@@ -152,3 +156,4 @@ crashlytics-build.properties
 fabric.properties
 
 node_modules/
+media
