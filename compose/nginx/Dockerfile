@@ -2,14 +2,14 @@
 FROM node:10-alpine as builder
 
 # copy the package.json to install dependencies
-COPY package.json package-lock.json ./
+COPY front-dashboard/package.json front-dashboard/package-lock.json ./
 
 # Install the dependencies and make the folder
 RUN npm install && mkdir /react-ui && mv ./node_modules ./react-ui
 
 WORKDIR /react-ui
 
-COPY . .
+COPY ./front-dashboard .
 
 # Build the project and copy the files
 RUN npm run build
@@ -34,6 +34,8 @@ COPY --from=builder /react-ui/build /srv/static
 COPY --from=django /app/media/static /srv/static/static
 COPY ./public/assets /srv/static/assets
 COPY ./public/landing.html /srv/static/
+COPY ./.certs /srv/certs
+
 
 EXPOSE 80
 
