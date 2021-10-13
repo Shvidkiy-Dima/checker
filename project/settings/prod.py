@@ -4,5 +4,5 @@ DEBUG = False
 
 API_HOST = 'https://check-it-out.fun'
 SITE_HOST = 'https://check-it-out.fun'
-LOGIN_PAGE = SITE_HOST + '/login/'
+LOGIN_PAGE = SITE_HOST + '/d/#/login'
 
