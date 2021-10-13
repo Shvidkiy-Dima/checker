@@ -2,7 +2,7 @@ from .base import *
 
 DEBUG = False
 
-API_HOST = 'https://45.84.226.13'
-SITE_HOST = 'https://45.84.226.13'
+API_HOST = 'https://check-it-out.fun'
+SITE_HOST = 'https://check-it-out.fun'
 LOGIN_PAGE = SITE_HOST + '/login/'
 
