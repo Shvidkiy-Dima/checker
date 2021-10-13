@@ -35,9 +35,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-API_HOST = 'http://localhost'
-SITE_HOST = 'http://localhost'
-LOGIN_PAGE = SITE_HOST + '/dashboard/login/'
+API_HOST = 'http://localhost:8000'
+SITE_HOST = 'http://localhost:3000'
+LOGIN_PAGE = SITE_HOST + '/login'
 
 # Application definition
 
@@ -164,7 +164,7 @@ DEFAULT_FROM_EMAIL = 'checkitout.service@mail.ru'
 EMAIL_USE_SSL = True
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_HOST_USER = 'checkitout.service@mail.ru'
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '19960213Za')
 EMAIL_PORT = 465
 
 

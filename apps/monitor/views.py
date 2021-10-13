@@ -38,6 +38,10 @@ class MonitorDetailView(SerializerMapMixin, generics.RetrieveUpdateDestroyAPIVie
 
     def get_queryset(self):
         monitor_id = self.kwargs['pk']
-        return Monitor.objects.by_user(self.request.user).prefetch_for_day()\
-            .prefetch_interval(monitor_id).annotate_avg_response_time()\
-            .annotate_count_and_percent()
+        qs = Monitor.objects.by_user(self.request.user)
+
+        if self.request.method.lower() == 'get':
+            return qs.prefetch_for_day().prefetch_interval(monitor_id)\
+                .annotate_avg_response_time().annotate_count_and_percent()
+        else:
+            return qs

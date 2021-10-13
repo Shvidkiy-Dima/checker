@@ -76,6 +76,10 @@ class Runner:
             service.run(conn)
 
 
-if __name__ == '__main__':
+def start():
     with prepare_background_logging(settings.FETCHER_DIR / 'logs/app.log'):
         Runner.start_loop()
+
+
+if __name__ == '__main__':
+    start()

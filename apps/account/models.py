@@ -47,6 +47,10 @@ class User(AbstractUser):
     def has_telegram(self):
         return self.telegram_chat_id is not None
 
+    @property
+    def channel_group_name(self):
+        return str(self)
+
 
 class ClientProfile(BaseModel):
 

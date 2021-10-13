@@ -22,14 +22,11 @@ class MonitorNestedIntervalLogSerializer(MonitorNestedLogSerializer):
 
 
 class ListMonitorSerializer(serializers.ModelSerializer):
-    last_log = MonitorNestedLogSerializer(read_only=True)
-    log_groups = serializers.JSONField(source='get_groups', read_only=True)
-    avg_response_time = serializers.FloatField()
     
     class Meta:
         model = Monitor
-        fields = ('id', 'interval_in_minutes', 'url', 'name', 'description', 'is_active', 'last_log',
-                  'log_groups', 'interval', 'next_request', 'successful_percent', 'unsuccessful_percent',
+        fields = ('id', 'interval_in_minutes', 'url', 'name', 'is_active',
+                  'interval', 'next_request', 'successful_percent', 'unsuccessful_percent',
                   'last_request_in_seconds','created', 'error_notification_interval',
                   'error_notification_interval_in_minutes','by_telegram', 'by_email', 'max_timeout', 'avg_response_time', 'log_last_count')
 
@@ -40,10 +37,14 @@ class ListMonitorSerializer(serializers.ModelSerializer):
 class DetailMonitorSerializer(ListMonitorSerializer):
     last_error_logs = MonitorNestedLogSerializer(many=True)
     interval_logs = MonitorNestedIntervalLogSerializer(many=True)
+    log_groups = serializers.JSONField(source='get_groups', read_only=True)
+    last_log = MonitorNestedLogSerializer(read_only=True)
 
     class Meta(ListMonitorSerializer.Meta):
-        fields = ListMonitorSerializer.Meta.fields + ('interval_logs', 'last_error_logs')
-        read_only_fields = ListMonitorSerializer.Meta.read_only_fields + ('interval_logs', 'last_error_logs')
+        fields = ListMonitorSerializer.Meta.fields + ('interval_logs', 'last_error_logs',
+                                                      'log_groups', 'description', 'last_log')
+        read_only_fields = ListMonitorSerializer.Meta.read_only_fields + ('interval_logs', 'last_error_logs',
+                                                                          'log_groups', 'description', 'last_log')
 
 
 class CreateMonitorSerializer(ListMonitorSerializer):
@@ -68,7 +69,7 @@ class CreateMonitorSerializer(ListMonitorSerializer):
 
         user = self.context.get('request').user
 
-        if not attrs.get('by_telegram', False):
+        if not attrs.get('by_telegram', False) and not attrs.get('by_email', False):
             raise serializers.ValidationError('You must set at least one notification option')
 
         m_amount = user.monitors.count()+1
@@ -78,8 +79,8 @@ class CreateMonitorSerializer(ListMonitorSerializer):
             raise serializers.ValidationError('Max amount monitors for free plan')
 
         attrs['user'] = user
-        attrs['next_request'] = self.async_validated_data['next_request']
-        attrs['last_request'] = self.async_validated_data['last_request']
+        attrs['next_request'] = self.async_validated_data.pop('next_request')
+        attrs['last_request'] = self.async_validated_data.pop('last_request')
         return attrs
 
     async def async_validate(self):
@@ -103,9 +104,8 @@ class CreateMonitorSerializer(ListMonitorSerializer):
             monitor = super().create(validated_data)
             log_attrs = self.async_validated_data
 
-            log = self.worker.make_log(monitor, log_attrs['response_time'], log_attrs['body'],
-                                        error=log_attrs['error'], response_code=log_attrs['response_code']
-                                        )
+            log = self.worker.make_log(monitor, **log_attrs)
+
         return log.monitor
 
 

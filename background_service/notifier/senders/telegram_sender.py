@@ -4,6 +4,7 @@ import django
 import os
 import sys
 import pathlib
+from typing import Union
 from django.conf import settings
 from django.db import transaction
 
@@ -14,6 +15,7 @@ django.setup()
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils import exceptions
 from channels.db import database_sync_to_async
+from channels.layers import get_channel_layer
 from notification.models import TelegramConfirmation
 from account.models import User
 
@@ -24,6 +26,25 @@ class TelegramSender:
 
     bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
     dp = Dispatcher(bot)
+
+    @staticmethod
+    @dp.message_handler(commands=['start'])
+    async def send_welcome(message: types.Message):
+        key = message.get_args()
+        channel_id = message.chat['id']
+        if not key:
+            msg = 'Please, check url. That must be something like this https://t.me/IsaliveProjectNotificationsBot?start={token}'
+            await TelegramSender.bot.send_message(channel_id, msg)
+            return
+
+        user: Union[None, User] = await TelegramSender.associate_user_with_telegram(channel_id, key)
+        if user is None:
+            await TelegramSender.bot.send_message(channel_id, 'Your link have been expired, please generate new link')
+            return
+
+        logger.info(f'TELEGRAM: Start new dialog with {user.email}')
+        await message.reply("Hi! Start monitoring")
+        await TelegramSender.send_to_channels(user)
 
     @staticmethod
     @database_sync_to_async
@@ -44,30 +65,19 @@ class TelegramSender:
         return user
 
     @staticmethod
-    @dp.message_handler(commands=['start'])
-    async def send_welcome(message: types.Message):
-        key = message.get_args()
-        channel_id = message.chat['id']
-        if not key:
-            msg = 'Please, check url. That must be something like this https://t.me/IsaliveProjectNotificationsBot?start={token}'
-            await TelegramSender.bot.send_message(channel_id, msg)
-            return
+    async def send_to_channels(user: User):
+        channel_name = user.channel_group_name
+        layer = get_channel_layer()
+        await layer.group_send(channel_name, {'type': 'telegram_response'})
 
-        user = await TelegramSender.associate_user_with_telegram(channel_id, key)
-        if user is None:
-            await TelegramSender.bot.send_message(channel_id, 'Your link have been expired, please generate new link')
-            return
-
-        logger.info(f'TELEGRAM: Start new dialog with {user.email}')
-        await message.reply("Hi! Start monitoring")
 
     async def run(self):
         await self.dp.start_polling()
 
     async def send_message(self, msg, chat_id, user_id):
         try:
-            await self.bot.send_message(chat_id, msg)
-            logger.info(f"TELEGRAM: Message was sent to {user_id}")
+            res = await self.bot.send_message(chat_id, msg)
+            logger.info(f"TELEGRAM: Message was sent to {user_id} {str(res)}")
         except Exception as e:
             await self._handle_send_message_error(e, user_id)
 

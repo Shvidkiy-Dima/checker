@@ -45,9 +45,9 @@ class MonitorQuerySet(QuerySet):
         hours = 24
         now = timezone.now()
         delta_start = now - timedelta(hours=hours)
-        return self.annotate(_avg_response_time=Avg('logs__response_time',
-                                                   filter=(models.Q(logs__created__gt=delta_start,
-                                                                    logs__created__lt=now))))
+        return self.annotate(_avg_response_time=Round(Avg('logs__response_time',
+                                                          filter=(models.Q(logs__created__gt=delta_start,
+                                                                    logs__created__lt=now)),)))
 
     def annotate_count_and_percent(self):
         hours = 24
@@ -75,7 +75,7 @@ class MonitorQuerySet(QuerySet):
     def prefetch_interval(self, monitor_id):
         hours = 24
         monitor_logs_qs = MonitorLog.objects.for_hours(hours)\
-            .annotate_response_interval(monitor_id)
+            .annotate_response_interval(monitor_id).order_by('created')
 
         qs = self.prefetch_related(models.Prefetch('logs', monitor_logs_qs,
                                                     to_attr='_interval_logs'))
@@ -185,9 +185,6 @@ class Monitor(BaseModel):
 
     @cached_property
     def last_request_in_seconds(self):
-        if not self.last_request:
-            return None
-
         return (timezone.now() - self.last_request).seconds
 
     @cached_property
@@ -198,7 +195,6 @@ class Monitor(BaseModel):
     @cached_property
     def last_log(self):
         last_logs = self.last_logs_for_day()
-
         if isinstance(last_logs, list):
             return last_logs[-1] if len(last_logs) > 0 else None
 
@@ -243,9 +239,6 @@ class Monitor(BaseModel):
 
     @lru_cache()
     def get_groups(self):
-
-        #TODO: try move to sql
-
         data = self.last_logs_for_day()
         groups = []
 

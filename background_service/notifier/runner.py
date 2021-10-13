@@ -31,7 +31,7 @@ class Dispatcher:
         msg = f'Something wrong - {data["name"]} - {data["url"]} - {data["error_msg"]}'
         logger.info(msg)
 
-        if data['telegram_chat_id'] and data['by_telegram'] and data['monitor_telegram']:
+        if data['telegram_chat_id'] and data['by_telegram']:
             await self.senders['telegram'].send_message(msg, data['telegram_chat_id'], data['user_id'])
 
         if data['by_email'] and data['email']:
@@ -49,14 +49,13 @@ class Dispatcher:
         channel = await connection.channel()
 
         # Declaring queue
+        await channel.queue_delete("notification")
         queue = await channel.declare_queue("notification")
 
-        # Start listening the queue with name 'hello'
+        # Start listening the queue
         await queue.consume(self.on_message, no_ack=True)
 
     async def run(self):
-        #tasks = [self.senders['telegram'].run(), self.senders['fcm'].run(), self.check_queue()]
-
         tasks = [self.senders['telegram'].run(),
                  self.senders['email'].run(),
                  self.check_queue()]
@@ -64,6 +63,10 @@ class Dispatcher:
         await asyncio.gather(*tasks)
 
 
-if __name__ == '__main__':
+def start():
     with prepare_background_logging(settings.NOTIFIER_DIR / 'logs/app.log'):
         asyncio.run(Dispatcher().run())
+
+
+if __name__ == '__main__':
+    start()

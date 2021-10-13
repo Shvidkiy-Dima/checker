@@ -6,7 +6,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'has_telegram')
+        fields = ('email', 'has_telegram', 'id')
 
 
 class AlertSerializer(serializers.ModelSerializer):

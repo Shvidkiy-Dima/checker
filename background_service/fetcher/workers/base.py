@@ -12,7 +12,6 @@ from channels.layers import get_channel_layer
 from aiohttp import ClientSession, ClientTimeout, http_exceptions
 from monitor.models import Monitor, MonitorLog
 from monitor.serializers import MonitorLogSerializer
-from rest_framework import status
 from channels.db import database_sync_to_async
 from django.utils import timezone
 from django.conf import settings
@@ -37,9 +36,6 @@ class ErrorMessage:
     by_email: bool
     email: str
     error_msg: str
-
-
-
 
 
 class BaseWorker(ABC):
@@ -143,15 +139,17 @@ class BaseWorker(ABC):
             monitor.last_request = timezone.now()
             monitor.next_request = timezone.now() + monitor.interval
             monitor.save(update_fields=['last_request', 'next_request'])
-            log = self.make_log(monitor, response_time, error=body)
+            log = self.make_log(monitor, response_time, error=body,
+                                is_successful=False, response_code=None)
             data = MonitorLogSerializer(log).data
             return data
 
-    def make_log(self, monitor, response_time, body=b'', error=None, response_code=None):
+    def make_log(self, monitor, response_time, error, is_successful, response_code):
         log = MonitorLog.objects.create(response_code=response_code,
                                         response_time=response_time,
                                         error=error,
-                                        monitor=monitor)
+                                        monitor=monitor,
+                                        is_successful=is_successful)
         return log
 
     async def get_rmq_conn(self):
