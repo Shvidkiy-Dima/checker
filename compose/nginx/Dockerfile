@@ -1,15 +1,15 @@
 # stage1 as builder
-FROM node:10-alpine as builder
+FROM node:14-alpine as builder
 
 # copy the package.json to install dependencies
-COPY front-dashboard/package.json front-dashboard/package-lock.json ./
+COPY front-dashboard/package.json  ./
 
 # Install the dependencies and make the folder
-RUN npm install && mkdir /react-ui && mv ./node_modules ./react-ui
+RUN npm install -f && mkdir /react-ui && mv ./node_modules ./react-ui
 
 WORKDIR /react-ui
 
-COPY ./front-dashboard .
+COPY ./front-dashboard/ .
 
 # Build the project and copy the files
 RUN npm run build
