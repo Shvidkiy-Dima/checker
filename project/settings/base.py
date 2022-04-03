@@ -35,8 +35,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-API_HOST = 'http://localhost:8000'
-SITE_HOST = 'http://localhost:3000'
+API_HOST = 'http://check-it-out.site'
+SITE_HOST = 'http://check-it-out.site'
 LOGIN_PAGE = SITE_HOST + '/login'
 
 # Application definition
@@ -217,7 +217,7 @@ CHANNEL_LAYERS = {
 
 # Telegram
 CONFIRMATION_TELEGRAM_EXPIRATION = 12 # hours
-TELEGRAM_BOT_NAME = 'IsaliveProjectNotificationsBot'
+TELEGRAM_BOT_NAME = 'Checkitout_project_Bot'
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 #
