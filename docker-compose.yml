@@ -15,8 +15,8 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./.envs/.prod/.django
-      - ./.envs/.prod/.postgres
+      - .envs/.django
+      - .envs/.db
     volumes:
       - ./docker_logs/django_logs:/app/logs
       - ./media:/app/media
@@ -45,8 +45,8 @@ services:
       - django
     restart: always
     env_file:
-      - ./.envs/.prod/.django
-      - ./.envs/.prod/.postgres
+      - .envs/.django
+      - .envs/.db
     volumes:
       - ./docker_logs/fetcher_logs:/app/background_service/fetcher/logs
 
@@ -62,8 +62,8 @@ services:
       - django
     restart: always
     env_file:
-      - ./.envs/.prod/.django
-      - ./.envs/.prod/.postgres
+      - .envs/.django
+      - .envs/.db
     volumes:
       - ./docker_logs/notifier_logs:/app/background_service/notifier/logs
 
@@ -74,7 +74,8 @@ services:
     ports:
       - "15672:15672"
     env_file:
-      - ./.envs/.prod/.rmq
+      - .envs/.django
+      - .envs/.db
 
   celery:
     build:
@@ -82,8 +83,8 @@ services:
       dockerfile: compose/celery/Dockerfile
     restart: always
     env_file:
-      - ./.envs/.prod/.django
-      - ./.envs/.prod/.postgres
+      - .envs/.django
+      - .envs/.db
     depends_on:
         - db
         - rabbit
@@ -102,4 +103,4 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql
     env_file:
-      - ./.envs/.prod/.postgres
+      - .envs/.db
